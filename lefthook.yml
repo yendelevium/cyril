@@ -1,0 +1,5 @@
+pre-commit:
+  commands:
+    format:
+      run: go fmt
+      stage_fixed: true
