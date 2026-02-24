@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 
 	"github.com/spf13/cobra"
 )
@@ -14,7 +15,7 @@ import (
 // createCmd represents the create command
 var createCmd = &cobra.Command{
 	Use:   "create",
-	Short: "Create a new note",
+	Short: "create a new file/note under a topic",
 	Long: `A longer description that spans multiple lines and likely contains examples
 	and usage of using your command. For example:
 
@@ -44,12 +45,36 @@ var createCmd = &cobra.Command{
 		// Create the file
 		filename := args[0]
 		filepath := fmt.Sprintf("%s/%s", dirpath, filename)
+
+		// Check if it exists? If it does, return (we don't wanna override it)
+		_, err = os.OpenFile(filepath, os.O_RDONLY, 0777)
+		if err == nil {
+			log.Printf("file:%s already exists in topic:%s; cannot create the file", filename, topic)
+			// Returning the error makes the command help thingy pop up (idk)
+			return nil
+		}
 		_, err = os.Create(filepath)
 		if err != nil {
 			log.Fatalf("Couldn't create file: %v", err)
 		}
 
 		log.Printf("Created file; Topic: %s, Name: %s", topic, filename)
+		// log.Println(config.editor)
+
+		// Hand-off control to the default editor...
+		// The default editor might also not be there if $EDITOR isn't set, so add fallback to a universal editor (idk)
+		command := exec.Command(config.editor, filepath)
+
+		// Need these coz otherwise the process starts elsewhere and NOT in the same terminal where cyril was invoked
+		command.Stdin = os.Stdin
+		command.Stdout = os.Stdout
+		command.Stderr = os.Stderr
+
+		// Run the command (editor) and wait for it to complete (Run() waits for compeletion automatically)
+		if err = command.Run(); err != nil {
+			return err
+		}
+		log.Println("Control returned")
 		return nil
 	},
 }
