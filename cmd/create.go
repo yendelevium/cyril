@@ -1,5 +1,5 @@
 /*
-Copyright © 2026 NAME HERE <EMAIL ADDRESS>
+Copyright © 2026 yendelevium <yashbardia27@gmail.com>
 */
 package cmd
 
@@ -8,8 +8,10 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/spf13/cobra"
+	bolt "go.etcd.io/bbolt"
 )
 
 // createCmd represents the create command
@@ -24,18 +26,17 @@ var createCmd = &cobra.Command{
 	to quickly create a Cobra application.`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-
 		// Get the topic, else fallback to config.defaultTopic
 		topic, err := cmd.Flags().GetString("topic")
 		if err != nil {
 			return err
 		}
 		if !cmd.Flags().Changed("topic") {
-			topic = config.defaultTopic
+			topic = Conf.DefaultTopic
 		}
 
 		// Make all intermediate directories
-		dirpath := fmt.Sprintf("%s/%s", config.store, topic)
+		dirpath := fmt.Sprintf("%s/%s", Conf.Store, topic)
 		// log.Println(dirpath)
 		err = os.MkdirAll(dirpath, 0777)
 		if err != nil {
@@ -58,12 +59,48 @@ var createCmd = &cobra.Command{
 			log.Fatalf("Couldn't create file: %v", err)
 		}
 
+		// TODO: maybe make this into its own function?
+		// create the alias and store it in the DB
+		done := make(chan struct{})
+		go func() {
+			// Since BoltDB only allows one process to hold the file, we have to close the DB after every transaction...
+			dbPath := fmt.Sprintf("%s/cyril.db", Conf.DBPath)
+			db, err := bolt.Open(dbPath, 0644, &bolt.Options{Timeout: 1 * time.Second})
+			if err != nil {
+				log.Fatalf("Couldn't open DB: %v", err)
+			}
+			defer db.Close()
+
+			// Write alias name to the DB
+			// The key is int the form {filename}.{topic}
+			err = db.Update(func(tx *bolt.Tx) error {
+				bucket, err := tx.CreateBucketIfNotExists([]byte("cyril"))
+				if err != nil {
+					log.Fatalf("Failed to create bucket; %v", err)
+				}
+
+				bucketKey := fmt.Sprintf("%s.%s", filename, topic)
+				err = bucket.Put([]byte(bucketKey), []byte(filepath))
+				if err != nil {
+					log.Fatalf("Failed to write to bucket; %v", err)
+				}
+				return nil
+			})
+
+			if err != nil {
+				log.Fatalf("KV error: %v", err)
+			}
+
+			// Signal the write is over
+			done <- struct{}{}
+		}()
+
 		log.Printf("Created file; Topic: %s, Name: %s", topic, filename)
 		// log.Println(config.editor)
 
-		// Hand-off control to the default editor...
+		// TODO:  Hand-off control to the default editor... (maybe abstract this into its own function? probably)
 		// The default editor might also not be there if $EDITOR isn't set, so add fallback to a universal editor (idk)
-		command := exec.Command(config.editor, filepath)
+		command := exec.Command(Conf.Editor, filepath)
 
 		// Need these coz otherwise the process starts elsewhere and NOT in the same terminal where cyril was invoked
 		command.Stdin = os.Stdin
@@ -75,6 +112,9 @@ var createCmd = &cobra.Command{
 			return err
 		}
 		log.Println("Control returned")
+
+		// Block till the DB write is done
+		<-done
 		return nil
 	},
 }

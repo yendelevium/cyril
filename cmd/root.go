@@ -13,12 +13,13 @@ import (
 )
 
 type Config struct {
-	store        string
-	editor       string
-	defaultTopic string
+	Store        string `mapstructure:"store"`
+	Editor       string `mapstructure:"editor"`
+	DefaultTopic string `mapstructure:"defaultTopic"`
+	DBPath       string `mapstructure:"dbPath"`
 }
 
-var config Config
+var Conf Config
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -82,13 +83,23 @@ func initConfig() {
 	// viper.SetDefault("store", "$HOME/Documents/cyril")
 	// viper.SetDefault("editor", viper.Get("EDITOR"))
 
-	config.store = `$HOME/Documents/cyrilStore`
-	config.editor = `$EDITOR`
-	config.defaultTopic = "general"
+	// config.store = `$HOME/Documents/cyrilStore`
+	// config.editor = `$EDITOR`
+	// config.defaultTopic = "general"
+	// config.dbPath = config.store // store the db at the same place as the notes by default
+
 	// Unmarshal the config into a variable
-	viper.Unmarshal(&config)
+	// log.Println(viper.Get("store"))
+	// log.Println(viper.Get("editor"))
+	// log.Println(viper.Get("defaultTopic"))
+	// log.Println(viper.Get("dbPath"))
+	err = viper.Unmarshal(&Conf)
+	if err != nil {
+		log.Println("Unmarshal failed?")
+	}
 
 	// Make sure the values are replaced by the environment values
-	config.store = os.ExpandEnv(config.store)
-	config.editor = os.ExpandEnv(config.editor)
+	Conf.Store = os.ExpandEnv(Conf.Store)
+	Conf.Editor = os.ExpandEnv(Conf.Editor)
+	Conf.DBPath = os.ExpandEnv(Conf.DBPath)
 }
