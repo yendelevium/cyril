@@ -12,6 +12,14 @@ import (
 	"github.com/spf13/viper"
 )
 
+type Config struct {
+	store        string
+	editor       string
+	defaultTopic string
+}
+
+var config Config
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "cyril",
@@ -52,17 +60,13 @@ func init() {
 
 	// Cobra also supports local flags, which will only run when this action is called directly.
 	cobra.OnInitialize(initConfig)
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func initConfig() {
 	viper.SetConfigName("config")
 	viper.AddConfigPath("$HOME/.config/cyril")
 	viper.SetConfigType("yml")
-
 	viper.AutomaticEnv()
-	viper.SetDefault("store", "$HOME/Documents/cyril")
-	viper.SetDefault("editor", viper.Get("EDITOR"))
 
 	var fileNotFoundError viper.ConfigFileNotFoundError
 	err := viper.ReadInConfig()
@@ -73,4 +77,18 @@ func initConfig() {
 			cobra.CheckErr(err)
 		}
 	}
+
+	// Setting default configs; viper.SetDefault doesn't work with viper.Unmarshall -> https://github.com/spf13/viper/issues/1284
+	// viper.SetDefault("store", "$HOME/Documents/cyril")
+	// viper.SetDefault("editor", viper.Get("EDITOR"))
+
+	config.store = `$HOME/Documents/cyrilStore`
+	config.editor = `$EDITOR`
+	config.defaultTopic = "general"
+	// Unmarshal the config into a variable
+	viper.Unmarshal(&config)
+
+	// Make sure the values are replaced by the environment values
+	config.store = os.ExpandEnv(config.store)
+	config.editor = os.ExpandEnv(config.editor)
 }
