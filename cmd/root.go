@@ -46,20 +46,11 @@ var rootCmd = &cobra.Command{
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
-		os.Exit(1) // Cobra supports persistent flags, which, if defined here,
-		// will be global for your application.
-
-		// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cyril.yaml)")
+		os.Exit(1)
 	}
 }
 
 func init() {
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here, will be global for your application.
-
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cyril.yaml)")
-
-	// Cobra also supports local flags, which will only run when this action is called directly.
 	cobra.OnInitialize(initConfig)
 }
 
@@ -83,16 +74,11 @@ func initConfig() {
 	// viper.SetDefault("store", "$HOME/Documents/cyril")
 	// viper.SetDefault("editor", viper.Get("EDITOR"))
 
-	// config.store = `$HOME/Documents/cyrilStore`
-	// config.editor = `$EDITOR`
-	// config.defaultTopic = "general"
-	// config.dbPath = config.store // store the db at the same place as the notes by default
+	Conf.Store = `$HOME/Documents/cyrilStore`
+	Conf.Editor = `$EDITOR`
+	Conf.DefaultTopic = "general"
+	Conf.DBPath = Conf.Store // store the db at the same place as the notes by default
 
-	// Unmarshal the config into a variable
-	// log.Println(viper.Get("store"))
-	// log.Println(viper.Get("editor"))
-	// log.Println(viper.Get("defaultTopic"))
-	// log.Println(viper.Get("dbPath"))
 	err = viper.Unmarshal(&Conf)
 	if err != nil {
 		log.Println("Unmarshal failed?")
