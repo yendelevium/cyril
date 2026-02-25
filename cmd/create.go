@@ -10,6 +10,8 @@ import (
 	"os/exec"
 	"time"
 
+	fp "path/filepath"
+
 	"github.com/spf13/cobra"
 	bolt "go.etcd.io/bbolt"
 )
@@ -36,7 +38,8 @@ var createCmd = &cobra.Command{
 		}
 
 		// Make all intermediate directories
-		dirpath := fmt.Sprintf("%s/%s", Conf.Store, topic)
+		// dirpath := fmt.Sprintf("%s/%s", Conf.Store, topic)
+		dirpath := fp.Join(Conf.Store, topic)
 		// log.Println(dirpath)
 		err = os.MkdirAll(dirpath, 0777)
 		if err != nil {
@@ -45,7 +48,7 @@ var createCmd = &cobra.Command{
 
 		// Create the file
 		filename := args[0]
-		filepath := fmt.Sprintf("%s/%s", dirpath, filename)
+		filepath := fp.Join(dirpath, filename)
 
 		// Check if it exists? If it does, return (we don't wanna override it)
 		_, err = os.OpenFile(filepath, os.O_RDONLY, 0777)
@@ -64,7 +67,7 @@ var createCmd = &cobra.Command{
 		done := make(chan struct{})
 		go func() {
 			// Since BoltDB only allows one process to hold the file, we have to close the DB after every transaction...
-			dbPath := fmt.Sprintf("%s/cyril.db", Conf.DBPath)
+			dbPath := fp.Join(Conf.DBPath, "cyril.db")
 			db, err := bolt.Open(dbPath, 0644, &bolt.Options{Timeout: 1 * time.Second})
 			if err != nil {
 				log.Fatalf("Couldn't open DB: %v", err)

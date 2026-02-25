@@ -6,10 +6,11 @@ package cmd
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"log"
 	"os"
 	"time"
+
+	fp "path/filepath"
 
 	"github.com/spf13/cobra"
 	bolt "go.etcd.io/bbolt"
@@ -31,7 +32,7 @@ var readCmd = &cobra.Command{
 		aliasNames := make(map[string]string)
 
 		// Get all keys that have the same alias name but diff topics
-		matchAliasPrefixes(filename, aliasNames)
+		MatchAliasPrefixes(filename, aliasNames)
 
 		// TODO: Walk the store to see any matching files using os.Walkdir (I think)
 		// TODO: IF file doesn't exist offer to create it
@@ -45,7 +46,7 @@ var readCmd = &cobra.Command{
 
 		// Iterate through all aliasnames and print out their content -> make the user choose in the future
 		for key, value := range aliasNames {
-			// log.Println(value)
+			log.Printf("Alias: %s; Path: %s", key, value)
 			fileContent, err := os.ReadFile(value)
 			if err != nil {
 				log.Fatalf("Couldn't read file: %v; Error: %v", key, err)
@@ -63,10 +64,11 @@ func init() {
 	rootCmd.AddCommand(readCmd)
 }
 
-func matchAliasPrefixes(filename string, aliasNames map[string]string) {
+func MatchAliasPrefixes(filename string, aliasNames map[string]string) {
 	// Making this a function as I want to use defer statement so I don't forget to close the DB
 	// Also using it in ReadOnly mode
-	dbPath := fmt.Sprintf("%s/cyril.db", Conf.DBPath)
+	// dbPath := fmt.Sprintf("%s/cyril.db", Conf.DBPath)
+	dbPath := fp.Join(Conf.DBPath, "cyril.db")
 	db, err := bolt.Open(dbPath, 0644, &bolt.Options{Timeout: 1 * time.Second, ReadOnly: true})
 	if err != nil {
 		log.Fatalf("Couldn't open DB: %v", err)
