@@ -20,9 +20,10 @@ type Config struct {
 }
 
 var Conf Config
+var hey string
 
 // rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
+var RootCmd = &cobra.Command{
 	Use:   "cyril",
 	Short: "A CLI butler to provide system-wide access to your notes. ",
 	Long: `A longer description that spans multiple lines and likely contains
@@ -41,14 +42,15 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+// No need fr this as I'm now using charmbracelet/fang, but if you want to revert just uncomment; also uncomment main.go
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
-		os.Exit(1)
-	}
-}
+// func Execute() {
+// 	err := RootCmd.Execute()
+// 	if err != nil {
+// 		os.Exit(1)
+// 	}
+// }
 
 func init() {
 	cobra.OnInitialize(initConfig)

@@ -99,7 +99,7 @@ func init() {
 	// This is because I'm assuming this line executes before initConfig() and we only get empty str (neither the default config, nor the actual config)
 	// As config is initialized w/o any values..
 	createCmd.Flags().StringP("topic", "t", "", "Help message for toggle")
-	rootCmd.AddCommand(createCmd)
+	RootCmd.AddCommand(createCmd)
 }
 
 // TODO: Make this RETURN an error

@@ -64,5 +64,5 @@ var aliasCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(aliasCmd)
+	RootCmd.AddCommand(aliasCmd)
 }

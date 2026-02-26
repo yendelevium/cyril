@@ -61,7 +61,7 @@ var readCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(readCmd)
+	RootCmd.AddCommand(readCmd)
 }
 
 // TODO: Make this RETURN an error

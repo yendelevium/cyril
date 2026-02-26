@@ -51,7 +51,7 @@ var editCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(editCmd)
+	RootCmd.AddCommand(editCmd)
 }
 
 // Copy a file from src to dst
