@@ -64,6 +64,7 @@ func init() {
 	rootCmd.AddCommand(readCmd)
 }
 
+// TODO: Make this RETURN an error
 func MatchAliasPrefixes(filename string, aliasNames map[string]string) {
 	// Making this a function as I want to use defer statement so I don't forget to close the DB
 	// Also using it in ReadOnly mode

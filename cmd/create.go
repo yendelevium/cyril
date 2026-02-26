@@ -62,38 +62,10 @@ var createCmd = &cobra.Command{
 			log.Fatalf("Couldn't create file: %v", err)
 		}
 
-		// TODO: maybe make this into its own function?
 		// create the alias and store it in the DB
 		done := make(chan struct{})
 		go func() {
-			// Since BoltDB only allows one process to hold the file, we have to close the DB after every transaction...
-			dbPath := fp.Join(Conf.DBPath, "cyril.db")
-			db, err := bolt.Open(dbPath, 0644, &bolt.Options{Timeout: 1 * time.Second})
-			if err != nil {
-				log.Fatalf("Couldn't open DB: %v", err)
-			}
-			defer db.Close()
-
-			// Write alias name to the DB
-			// The key is int the form {filename}.{topic}
-			err = db.Update(func(tx *bolt.Tx) error {
-				bucket, err := tx.CreateBucketIfNotExists([]byte("cyril"))
-				if err != nil {
-					log.Fatalf("Failed to create bucket; %v", err)
-				}
-
-				bucketKey := fmt.Sprintf("%s.%s", filename, topic)
-				err = bucket.Put([]byte(bucketKey), []byte(filepath))
-				if err != nil {
-					log.Fatalf("Failed to write to bucket; %v", err)
-				}
-				return nil
-			})
-
-			if err != nil {
-				log.Fatalf("KV error: %v", err)
-			}
-
+			AddAlias(filename, topic, filepath)
 			// Signal the write is over
 			done <- struct{}{}
 		}()
@@ -128,4 +100,36 @@ func init() {
 	// As config is initialized w/o any values..
 	createCmd.Flags().StringP("topic", "t", "", "Help message for toggle")
 	rootCmd.AddCommand(createCmd)
+}
+
+// TODO: Make this RETURN an error
+func AddAlias(filename string, topic string, filepath string) {
+	// Since BoltDB only allows one process to hold the file, we have to close the DB after every transaction...
+	dbPath := fp.Join(Conf.DBPath, "cyril.db")
+	db, err := bolt.Open(dbPath, 0644, &bolt.Options{Timeout: 1 * time.Second})
+	if err != nil {
+		log.Fatalf("Couldn't open DB: %v", err)
+	}
+	defer db.Close()
+
+	// Write alias name to the DB
+	// The key is int the form {filename}.{topic}
+	err = db.Update(func(tx *bolt.Tx) error {
+		bucket, err := tx.CreateBucketIfNotExists([]byte("cyril"))
+		if err != nil {
+			log.Fatalf("Failed to create bucket; %v", err)
+		}
+
+		bucketKey := fmt.Sprintf("%s.%s", filename, topic)
+		err = bucket.Put([]byte(bucketKey), []byte(filepath))
+		if err != nil {
+			log.Fatalf("Failed to write to bucket; %v", err)
+		}
+		return nil
+	})
+
+	if err != nil {
+		log.Fatalf("KV error: %v", err)
+	}
+
 }
