@@ -12,6 +12,8 @@ import (
 	fp "path/filepath"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/term"
 	"github.com/spf13/cobra"
 	"github.com/yendelevium/cyril/config"
 	"github.com/yendelevium/cyril/internal/tui"
@@ -56,15 +58,33 @@ var readCmd = &cobra.Command{
 			return nil
 		}
 
+		// TODO: This lipgloss code is reused in the tui View() as well, so un-reuse it by making it a function?
 		if len(aliasNames) == 1 {
 			file := aliasNames[0]
-			fmt.Printf("Alias: %s; Path: %s", file.filename, file.filepath)
+			fmt.Printf("Alias: %s; Path: %s\n", file.filename, file.filepath)
 			fileContent, err := os.ReadFile(file.filepath)
 			if err != nil {
 				fmt.Printf("Couldn't read file: %v; Error: %v\n", file.filename, err)
 				return nil
 			}
-			fmt.Printf("%s", string(fileContent))
+
+			// Get the current terminal width and use that to help deal with border rendering issues in lipgloss
+			physicalWidth, _, err := term.GetSize(os.Stdout.Fd())
+			if err != nil {
+				physicalWidth = 80 // Fallback width just in case
+			}
+			style := lipgloss.NewStyle().
+				BorderStyle(lipgloss.NormalBorder()).
+				// TODO: Factor the colour out as a constant as I'm using it in multiple places
+				BorderForeground(lipgloss.RGBColor{
+					R: 220,
+					G: 155,
+					B: 255,
+				}).
+				Width(physicalWidth - 1).
+				PaddingLeft(1).
+				PaddingRight(1)
+			lipgloss.Println(style.Render(fmt.Sprintf("%s", string(fileContent))))
 			return nil
 		}
 

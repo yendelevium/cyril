@@ -5,6 +5,8 @@ import (
 	"os"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/term"
 )
 
 type FileData struct {
@@ -58,23 +60,52 @@ func (m ReadModel) View() tea.View {
 
 	// IF I've selected a file, display it and quit
 	if m.Selected == m.Files[m.Cursor] {
+		s += fmt.Sprintf("Alias: %s; Path: %s\n", m.Selected.Filename, m.Selected.Filepath)
 		fileContent, err := os.ReadFile(m.Selected.Filepath)
 		if err != nil {
 			s += fmt.Sprintf("Couldn't read file: %v; Error: %v", m.Selected.Filename, err)
 			return tea.NewView(s)
 		}
-		s += string(fileContent)
+
+		// Get the current terminal width and use that to help deal with border rendering issues in lipgloss
+		physicalWidth, _, err := term.GetSize(os.Stdout.Fd())
+		if err != nil {
+			physicalWidth = 80 // Fallback width just in case
+		}
+		style := lipgloss.NewStyle().
+			BorderStyle(lipgloss.NormalBorder()).
+			BorderForeground(lipgloss.RGBColor{
+				R: 220,
+				G: 155,
+				B: 255,
+			}).
+			Width(physicalWidth - 1).
+			PaddingLeft(1).
+			PaddingRight(1)
+
+		s += lipgloss.Sprintln(style.Render(fmt.Sprintf("%s", string(fileContent))))
 		return tea.NewView(s)
 	}
 
+	// TODO: Instead of padding with spaces, actually use lipgloss.Padding()? (pain) (will do later)
+	maxLen := 0
+	for _, file := range m.Files {
+		fileMsg := fmt.Sprintf("  Alias: %s;FilePath: %s;\n", file.Filename, file.Filepath)
+		maxLen = max(maxLen, len(fileMsg))
+	}
 	// Iterate over our Files
 	for i, choice := range m.Files {
-		Cursor := " "
 		if m.Cursor == i {
-			Cursor = ">"
+			// TODO: This has a problem where if I press 'q', the colour stays and it looks kindof ugly
+			style := lipgloss.NewStyle().Background(lipgloss.RGBColor{
+				R: 220,
+				G: 155,
+				B: 255,
+			}).Width(maxLen)
+			s += lipgloss.Sprintln(style.Render(fmt.Sprintf("  Alias: %s;FilePath: %s;", choice.Filename, choice.Filepath)))
+		} else {
+			s += fmt.Sprintf("  Alias: %s;FilePath: %s;\n", choice.Filename, choice.Filepath)
 		}
-		// Render the row
-		s += fmt.Sprintf("%s Alias: %s;FilePath: %s;\n", Cursor, choice.Filename, choice.Filepath)
 	}
 
 	// The footer
