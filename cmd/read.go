@@ -5,19 +5,20 @@ package cmd
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
 	fp "path/filepath"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/spf13/cobra"
 	"github.com/yendelevium/cyril/config"
+	"github.com/yendelevium/cyril/internal/tui"
 	bolt "go.etcd.io/bbolt"
 )
 
+// TODO: Make this common between the tui and this?
 type fileData struct {
 	filename string
 	filepath string
@@ -39,30 +40,51 @@ var readCmd = &cobra.Command{
 		aliasNames := []fileData{}
 
 		// Get all keys that have the same alias name but diff topics
-		MatchAliasPrefixes(filename, &aliasNames)
+		err := MatchAliasPrefixes(filename, &aliasNames)
+		if err != nil {
+			return err
+		}
 
 		// TODO: Walk the store to see any matching files using os.Walkdir (I think)
 		// TODO: IF file doesn't exist offer to create it
 		// TODO: IF multiple files exist offer to choose which one to open
+		// If aliasName length is 0 or 1, handle normally
 		if len(aliasNames) == 0 {
 			// No alias names
 			// Walk the directory? or NO?
-			log.Printf("Couldn't find the note %s", filename)
+			fmt.Printf("Couldn't find the note %s!\n", filename)
 			return nil
 		}
 
-		// Iterate through all aliasnames and print out their content -> make the user choose in the future
-		for _, file := range aliasNames {
-			log.Printf("Alias: %s; Path: %s", file.filename, file.filepath)
+		if len(aliasNames) == 1 {
+			file := aliasNames[0]
+			fmt.Printf("Alias: %s; Path: %s", file.filename, file.filepath)
 			fileContent, err := os.ReadFile(file.filepath)
 			if err != nil {
-				log.Fatalf("Couldn't read file: %v; Error: %v", file.filename, err)
+				fmt.Printf("Couldn't read file: %v; Error: %v\n", file.filename, err)
+				return nil
 			}
 			fmt.Printf("%s", string(fileContent))
-
-			// For now only reading the first aliased file
-			// break
+			return nil
 		}
+
+		// Iterate through all aliasnames and print out their content -> make the user choose
+		model := tui.ReadModel{}
+		for _, file := range aliasNames {
+			// fmt.Printf("Idx: %d; Alias: %s; Path: %s", idx, file.filename, file.filepath)
+			model.Files = append(model.Files, tui.FileData{
+				Filename: file.filename,
+				Filepath: file.filepath,
+			})
+		}
+
+		// Start the bubbletea program to display the options
+		p := tea.NewProgram(model)
+		if _, err := p.Run(); err != nil {
+			fmt.Printf("Couldn't run bubbletea: %v\n", err)
+			os.Exit(1)
+		}
+
 		return nil
 	},
 }
@@ -72,14 +94,14 @@ func init() {
 }
 
 // TODO: Make this RETURN an error
-func MatchAliasPrefixes(filename string, aliasNames *[]fileData) {
+func MatchAliasPrefixes(filename string, aliasNames *[]fileData) error {
 	// Making this a function as I want to use defer statement so I don't forget to close the DB
 	// Also using it in ReadOnly mode
 	// dbPath := fmt.Sprintf("%s/cyril.db", Conf.DBPath)
 	dbPath := fp.Join(config.Conf.DBPath, "cyril.db")
 	db, err := bolt.Open(dbPath, 0644, &bolt.Options{Timeout: 1 * time.Second, ReadOnly: true})
 	if err != nil {
-		log.Fatalf("Couldn't open DB: %v", err)
+		return fmt.Errorf("Couldn't open DB: %v \n", err)
 	}
 	defer db.Close()
 
@@ -88,7 +110,7 @@ func MatchAliasPrefixes(filename string, aliasNames *[]fileData) {
 	err = db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte("cyril"))
 		if bucket == nil {
-			return errors.New("NO notes recorded yet...")
+			return fmt.Errorf("NO notes recorded yet...\n")
 		}
 
 		// Matching Prefixes (multiple topics might have same filename)
@@ -105,6 +127,7 @@ func MatchAliasPrefixes(filename string, aliasNames *[]fileData) {
 	})
 
 	if err != nil {
-		log.Fatalf("KV error: %v", err)
+		return fmt.Errorf("KV error: %v\n", err)
 	}
+	return nil
 }

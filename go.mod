@@ -3,13 +3,14 @@ module github.com/yendelevium/cyril
 go 1.25.4
 
 require (
+	charm.land/bubbletea/v2 v2.0.1 // indirect
 	charm.land/lipgloss/v2 v2.0.0-beta.3.0.20251106193318-19329a3e8410 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/charmbracelet/bubbletea v1.3.10 // indirect
 	github.com/charmbracelet/colorprofile v0.4.2 // indirect
 	github.com/charmbracelet/fang v0.4.4 // indirect
 	github.com/charmbracelet/lipgloss v1.1.0 // indirect
-	github.com/charmbracelet/ultraviolet v0.0.0-20251106190538-99ea45596692 // indirect
+	github.com/charmbracelet/ultraviolet v0.0.0-20260205113103-524a6607adb8 // indirect
 	github.com/charmbracelet/x/ansi v0.11.6 // indirect
 	github.com/charmbracelet/x/cellbuf v0.0.15 // indirect
 	github.com/charmbracelet/x/exp/charmtone v0.0.0-20250603201427-c31516f43444 // indirect
