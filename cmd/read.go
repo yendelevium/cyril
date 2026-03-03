@@ -13,6 +13,7 @@ import (
 	fp "path/filepath"
 
 	"github.com/spf13/cobra"
+	"github.com/yendelevium/cyril/config"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -69,7 +70,7 @@ func MatchAliasPrefixes(filename string, aliasNames map[string]string) {
 	// Making this a function as I want to use defer statement so I don't forget to close the DB
 	// Also using it in ReadOnly mode
 	// dbPath := fmt.Sprintf("%s/cyril.db", Conf.DBPath)
-	dbPath := fp.Join(Conf.DBPath, "cyril.db")
+	dbPath := fp.Join(config.Conf.DBPath, "cyril.db")
 	db, err := bolt.Open(dbPath, 0644, &bolt.Options{Timeout: 1 * time.Second, ReadOnly: true})
 	if err != nil {
 		log.Fatalf("Couldn't open DB: %v", err)

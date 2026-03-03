@@ -11,6 +11,7 @@ import (
 	fp "path/filepath"
 
 	"github.com/spf13/cobra"
+	"github.com/yendelevium/cyril/config"
 )
 
 // editCmd represents the edit command
@@ -93,7 +94,7 @@ func editFile(filename string, filepath string) error {
 
 	// TODO:  Hand-off control to the default editor... (maybe abstract this into its own function? probably)
 	// The default editor might also not be there if $EDITOR isn't set, so add fallback to a universal editor (idk)
-	command := exec.Command(Conf.Editor, tmpFile)
+	command := exec.Command(config.Conf.Editor, tmpFile)
 
 	// Need these coz otherwise the process starts elsewhere and NOT in the same terminal where cyril was invoked
 	command.Stdin = os.Stdin

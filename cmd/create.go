@@ -13,6 +13,7 @@ import (
 	fp "path/filepath"
 
 	"github.com/spf13/cobra"
+	"github.com/yendelevium/cyril/config"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -28,18 +29,18 @@ var createCmd = &cobra.Command{
 	to quickly create a Cobra application.`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Get the topic, else fallback to config.defaultTopic
+		// Get the topic, else fallback to config.config.defaultTopic
 		topic, err := cmd.Flags().GetString("topic")
 		if err != nil {
 			return err
 		}
 		if !cmd.Flags().Changed("topic") {
-			topic = Conf.DefaultTopic
+			topic = config.Conf.DefaultTopic
 		}
 
 		// Make all intermediate directories
-		// dirpath := fmt.Sprintf("%s/%s", Conf.Store, topic)
-		dirpath := fp.Join(Conf.Store, topic)
+		// dirpath := fmt.Sprintf("%s/%s", config.Conf.Store, topic)
+		dirpath := fp.Join(config.Conf.Store, topic)
 		// log.Println(dirpath)
 		err = os.MkdirAll(dirpath, 0777)
 		if err != nil {
@@ -71,11 +72,11 @@ var createCmd = &cobra.Command{
 		}()
 
 		log.Printf("Created file; Topic: %s, Name: %s", topic, filename)
-		// log.Println(config.editor)
+		// log.Println(config.config.editor)
 
 		// TODO:  Hand-off control to the default editor... (maybe abstract this into its own function? probably)
 		// The default editor might also not be there if $EDITOR isn't set, so add fallback to a universal editor (idk)
-		command := exec.Command(Conf.Editor, filepath)
+		command := exec.Command(config.Conf.Editor, filepath)
 
 		// Need these coz otherwise the process starts elsewhere and NOT in the same terminal where cyril was invoked
 		command.Stdin = os.Stdin
@@ -95,9 +96,9 @@ var createCmd = &cobra.Command{
 }
 
 func init() {
-	// Can't put config.defaultTopic as fallback value here
-	// This is because I'm assuming this line executes before initConfig() and we only get empty str (neither the default config, nor the actual config)
-	// As config is initialized w/o any values..
+	// Can't put config.config.defaultTopic as fallback value here
+	// This is because I'm assuming this line executes before initconfig.Config() and we only get empty str (neither the default config.config, nor the actual config.config)
+	// As config.config is initialized w/o any values..
 	createCmd.Flags().StringP("topic", "t", "", "Help message for toggle")
 	RootCmd.AddCommand(createCmd)
 }
@@ -105,7 +106,7 @@ func init() {
 // TODO: Make this RETURN an error
 func AddAlias(filename string, topic string, filepath string) {
 	// Since BoltDB only allows one process to hold the file, we have to close the DB after every transaction...
-	dbPath := fp.Join(Conf.DBPath, "cyril.db")
+	dbPath := fp.Join(config.Conf.DBPath, "cyril.db")
 	db, err := bolt.Open(dbPath, 0644, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
 		log.Fatalf("Couldn't open DB: %v", err)
