@@ -27,10 +27,10 @@ var editCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		filename := args[0]
-		aliasNames := make(map[string]string)
+		aliasNames := []fileData{}
 
 		// Get all keys that have the same alias name but diff topics
-		MatchAliasPrefixes(filename, aliasNames)
+		MatchAliasPrefixes(filename, &aliasNames)
 
 		// TODO: The same ones as in read.go (walk file dir, choose if multiple, prompt to create)
 		if len(aliasNames) == 0 {
@@ -39,8 +39,8 @@ var editCmd = &cobra.Command{
 		}
 
 		// TODO: Only ONE file must be edited haha
-		for key, value := range aliasNames {
-			err := editFile(key, value)
+		for _, file := range aliasNames {
+			err := editFile(file.filename, file.filepath)
 			if err != nil {
 				return err
 			}

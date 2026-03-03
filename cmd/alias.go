@@ -34,8 +34,8 @@ var aliasCmd = &cobra.Command{
 		targetAlias := args[1]
 
 		// Get the other alias(es)
-		aliasNames := make(map[string]string)
-		MatchAliasPrefixes(targetAlias, aliasNames)
+		aliasNames := []fileData{}
+		MatchAliasPrefixes(targetAlias, &aliasNames)
 		if len(aliasNames) == 0 {
 			// No alias names
 			// Walk the directory? or NO?
@@ -44,16 +44,16 @@ var aliasCmd = &cobra.Command{
 		}
 
 		// Iterate through all aliasnames and steal the topic -> make the user choose in the future
-		for key, value := range aliasNames {
-			log.Printf("Alias: %s; Path: %s", key, value)
-			keyParts := strings.Split(key, ".")
+		for _, file := range aliasNames {
+			log.Printf("Alias: %s; Path: %s", file.filename, file.filepath)
+			keyParts := strings.Split(file.filename, ".")
 
 			// TODO: This will FAIL if the topic has a '.' in it, so uhh idk fix this later?
 			// Maybe I can force topics to NOT contain any '.'s
 			topic := keyParts[len(keyParts)-1]
 
 			// Add the alias
-			AddAlias(newAlias, topic, value)
+			AddAlias(newAlias, topic, file.filepath)
 			log.Printf("New alias for file: %s in topic: %s has been created", targetAlias, topic)
 
 			// For now only reading the first alias

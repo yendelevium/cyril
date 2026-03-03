@@ -6,6 +6,7 @@ package cmd
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -16,6 +17,11 @@ import (
 	"github.com/yendelevium/cyril/config"
 	bolt "go.etcd.io/bbolt"
 )
+
+type fileData struct {
+	filename string
+	filepath string
+}
 
 // readCmd represents the read command
 var readCmd = &cobra.Command{
@@ -30,10 +36,10 @@ var readCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		filename := args[0]
-		aliasNames := make(map[string]string)
+		aliasNames := []fileData{}
 
 		// Get all keys that have the same alias name but diff topics
-		MatchAliasPrefixes(filename, aliasNames)
+		MatchAliasPrefixes(filename, &aliasNames)
 
 		// TODO: Walk the store to see any matching files using os.Walkdir (I think)
 		// TODO: IF file doesn't exist offer to create it
@@ -46,16 +52,16 @@ var readCmd = &cobra.Command{
 		}
 
 		// Iterate through all aliasnames and print out their content -> make the user choose in the future
-		for key, value := range aliasNames {
-			log.Printf("Alias: %s; Path: %s", key, value)
-			fileContent, err := os.ReadFile(value)
+		for _, file := range aliasNames {
+			log.Printf("Alias: %s; Path: %s", file.filename, file.filepath)
+			fileContent, err := os.ReadFile(file.filepath)
 			if err != nil {
-				log.Fatalf("Couldn't read file: %v; Error: %v", key, err)
+				log.Fatalf("Couldn't read file: %v; Error: %v", file.filename, err)
 			}
-			log.Printf("%s", string(fileContent))
+			fmt.Printf("%s", string(fileContent))
 
 			// For now only reading the first aliased file
-			break
+			// break
 		}
 		return nil
 	},
@@ -66,7 +72,7 @@ func init() {
 }
 
 // TODO: Make this RETURN an error
-func MatchAliasPrefixes(filename string, aliasNames map[string]string) {
+func MatchAliasPrefixes(filename string, aliasNames *[]fileData) {
 	// Making this a function as I want to use defer statement so I don't forget to close the DB
 	// Also using it in ReadOnly mode
 	// dbPath := fmt.Sprintf("%s/cyril.db", Conf.DBPath)
@@ -89,7 +95,10 @@ func MatchAliasPrefixes(filename string, aliasNames map[string]string) {
 		c := bucket.Cursor()
 		prefix := []byte(filename)
 		for k, v := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = c.Next() {
-			aliasNames[string(k)] = string(v)
+			*aliasNames = append(*aliasNames, fileData{
+				filename: string(k),
+				filepath: string(v),
+			})
 		}
 
 		return nil
