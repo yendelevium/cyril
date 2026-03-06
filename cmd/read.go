@@ -69,6 +69,8 @@ var readCmd = &cobra.Command{
 			}
 
 			// Get the current terminal width and use that to help deal with border rendering issues in lipgloss
+			// TODO: This fix works, but then if I fullscreen the terminal, I get a block that is half rendered and I can't do anything coz it has alr been printed and the program has ended
+			// It isn't a HUGE problem but still it looks kindof ugly so yeah idk
 			physicalWidth, _, err := term.GetSize(os.Stdout.Fd())
 			if err != nil {
 				physicalWidth = 80 // Fallback width just in case
@@ -113,7 +115,6 @@ func init() {
 	RootCmd.AddCommand(readCmd)
 }
 
-// TODO: Make this RETURN an error
 func MatchAliasPrefixes(filename string, aliasNames *[]fileData) error {
 	// Making this a function as I want to use defer statement so I don't forget to close the DB
 	// Also using it in ReadOnly mode
@@ -142,7 +143,6 @@ func MatchAliasPrefixes(filename string, aliasNames *[]fileData) error {
 				filepath: string(v),
 			})
 		}
-
 		return nil
 	})
 

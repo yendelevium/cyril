@@ -2,30 +2,31 @@ package tui
 
 import (
 	"fmt"
-	"os"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/charmbracelet/x/term"
 )
 
-type ReadModel struct {
+type EditModel struct {
 	Files    []FileData // items on the to-do list
 	Cursor   int        // which to-do list item our Cursor is pointing at
 	Selected FileData   // which to-do items are selected
+	Reply    *FileData
+	NoOption bool
 }
 
-func (m ReadModel) Init() tea.Cmd {
+func (m EditModel) Init() tea.Cmd {
 	// Just return `nil`, which means "no I/O right now, please."
 	return nil
 }
 
-func (m ReadModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m EditModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
+			m.NoOption = true
 			return m, tea.Quit
 
 		case "up":
@@ -40,6 +41,8 @@ func (m ReadModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "enter":
 			m.Selected = m.Files[m.Cursor]
+			m.Reply.Filename = m.Selected.Filename
+			m.Reply.Filepath = m.Selected.Filepath
 			return m, tea.Quit
 		}
 	}
@@ -49,40 +52,19 @@ func (m ReadModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m ReadModel) View() tea.View {
+func (m EditModel) View() tea.View {
 	// The header
 	var s string
 
-	// IF I've selected a file, display it and quit
-	if m.Selected == m.Files[m.Cursor] {
-		s += fmt.Sprintf("Alias: %s; Path: %s\n", m.Selected.Filename, m.Selected.Filepath)
-		fileContent, err := os.ReadFile(m.Selected.Filepath)
-		if err != nil {
-			s += fmt.Sprintf("Couldn't read file: %v; Error: %v", m.Selected.Filename, err)
-			return tea.NewView(s)
-		}
-
-		// Get the current terminal width and use that to help deal with border rendering issues in lipgloss
-		physicalWidth, _, err := term.GetSize(os.Stdout.Fd())
-		if err != nil {
-			physicalWidth = 80 // Fallback width just in case
-		}
-		style := lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(lipgloss.RGBColor{
-				R: 220,
-				G: 155,
-				B: 255,
-			}).
-			Width(physicalWidth - 1).
-			PaddingLeft(1).
-			PaddingRight(1)
-
-		s += lipgloss.Sprintln(style.Render(fmt.Sprintf("%s", string(fileContent))))
+	if m.NoOption == true {
+		s += "No file chosen to edit!\n"
 		return tea.NewView(s)
 	}
 
-	// TODO: Instead of padding with spaces, actually use lipgloss.Padding()? (pain) (will do later)
+	if m.Selected == m.Files[m.Cursor] {
+		s += fmt.Sprintf("[EDITING] Alias: %s;FilePath: %s;\n", m.Selected.Filename, m.Selected.Filepath)
+		return tea.NewView(s)
+	}
 	maxLen := 0
 	for _, file := range m.Files {
 		fileMsg := fmt.Sprintf("  Alias: %s;FilePath: %s;\n", file.Filename, file.Filepath)
@@ -103,9 +85,6 @@ func (m ReadModel) View() tea.View {
 		}
 	}
 
-	// The footer
 	s += "  Press q to quit"
-
-	// Send the UI for rendering
 	return tea.NewView(s)
 }

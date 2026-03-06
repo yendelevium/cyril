@@ -4,14 +4,17 @@ Copyright © 2026 yendelevium <yashbardia27@gmail.com>
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
 	"os/exec"
 	fp "path/filepath"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/spf13/cobra"
 	"github.com/yendelevium/cyril/config"
+	"github.com/yendelevium/cyril/internal/tui"
 )
 
 // editCmd represents the edit command
@@ -30,7 +33,10 @@ var editCmd = &cobra.Command{
 		aliasNames := []fileData{}
 
 		// Get all keys that have the same alias name but diff topics
-		MatchAliasPrefixes(filename, &aliasNames)
+		err := MatchAliasPrefixes(filename, &aliasNames)
+		if err != nil {
+			return err
+		}
 
 		// TODO: The same ones as in read.go (walk file dir, choose if multiple, prompt to create)
 		if len(aliasNames) == 0 {
@@ -38,15 +44,49 @@ var editCmd = &cobra.Command{
 			return nil
 		}
 
-		// TODO: Only ONE file must be edited haha
-		for _, file := range aliasNames {
+		// IF only one file, edit & return
+		if len(aliasNames) == 1 {
+			file := aliasNames[0]
 			err := editFile(file.filename, file.filepath)
 			if err != nil {
 				return err
 			}
-			// For now only editing the first aliased file
-			break
+			return nil
 		}
+
+		// Iterate through all aliasnames and print out their content -> make the user choose
+		model := tui.EditModel{
+			Reply: &tui.FileData{
+				Filename: "DIDN'T CHOOSE A FILE",
+				Filepath: "DIDN'T CHOOSE A FILE",
+			},
+			NoOption: false,
+		}
+		for _, file := range aliasNames {
+			// fmt.Printf("Idx: %d; Alias: %s; Path: %s", idx, file.filename, file.filepath)
+			model.Files = append(model.Files, tui.FileData{
+				Filename: file.filename,
+				Filepath: file.filepath,
+			})
+		}
+
+		// Start the bubbletea program to display the options
+		p := tea.NewProgram(model)
+		if _, err := p.Run(); err != nil {
+			fmt.Printf("Couldn't run bubbletea: %v\n", err)
+			os.Exit(1)
+		}
+
+		if model.Reply.Filename == "DIDN'T CHOOSE A FILE" && model.Reply.Filepath == "DIDN'T CHOOSE A FILE" {
+			return nil
+		}
+		// Print it out
+		err = editFile(model.Reply.Filename, model.Reply.Filepath)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Successfully edited the file!\n")
 		return nil
 	},
 }
@@ -105,8 +145,6 @@ func editFile(filename string, filepath string) error {
 	if err := command.Run(); err != nil {
 		return err
 	}
-	log.Println("Control returned")
-
 	// Copy the tmp file back to the original file
 	return copyFile(tmpFile, filepath)
 }
