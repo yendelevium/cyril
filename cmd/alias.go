@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/yendelevium/cyril/internal/tui"
 )
 
 // aliasCmd represents the alias command
@@ -34,7 +35,7 @@ var aliasCmd = &cobra.Command{
 		targetAlias := args[1]
 
 		// Get the other alias(es)
-		aliasNames := []fileData{}
+		aliasNames := []tui.FileData{}
 		MatchAliasPrefixes(targetAlias, &aliasNames)
 		if len(aliasNames) == 0 {
 			// No alias names
@@ -45,15 +46,15 @@ var aliasCmd = &cobra.Command{
 
 		// Iterate through all aliasnames and steal the topic -> make the user choose in the future
 		for _, file := range aliasNames {
-			log.Printf("Alias: %s; Path: %s", file.filename, file.filepath)
-			keyParts := strings.Split(file.filename, ".")
+			log.Printf("Alias: %s; Path: %s", file.Filename, file.Filepath)
+			keyParts := strings.Split(file.Filename, ".")
 
 			// TODO: This will FAIL if the topic has a '.' in it, so uhh idk fix this later?
 			// Maybe I can force topics to NOT contain any '.'s
 			topic := keyParts[len(keyParts)-1]
 
 			// Add the alias
-			AddAlias(newAlias, topic, file.filepath)
+			AddAlias(newAlias, topic, file.Filepath)
 			log.Printf("New alias for file: %s in topic: %s has been created", targetAlias, topic)
 
 			// For now only reading the first alias

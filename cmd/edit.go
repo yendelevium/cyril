@@ -30,7 +30,7 @@ var editCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		filename := args[0]
-		aliasNames := []fileData{}
+		aliasNames := []tui.FileData{}
 
 		// Get all keys that have the same alias name but diff topics
 		err := MatchAliasPrefixes(filename, &aliasNames)
@@ -47,7 +47,7 @@ var editCmd = &cobra.Command{
 		// IF only one file, edit & return
 		if len(aliasNames) == 1 {
 			file := aliasNames[0]
-			err := editFile(file.filename, file.filepath)
+			err := editFile(file.Filename, file.Filepath)
 			if err != nil {
 				return err
 			}
@@ -56,18 +56,12 @@ var editCmd = &cobra.Command{
 
 		// Iterate through all aliasnames and print out their content -> make the user choose
 		model := tui.EditModel{
+			Files: aliasNames,
 			Reply: &tui.FileData{
 				Filename: "DIDN'T CHOOSE A FILE",
 				Filepath: "DIDN'T CHOOSE A FILE",
 			},
 			NoOption: false,
-		}
-		for _, file := range aliasNames {
-			// fmt.Printf("Idx: %d; Alias: %s; Path: %s", idx, file.filename, file.filepath)
-			model.Files = append(model.Files, tui.FileData{
-				Filename: file.filename,
-				Filepath: file.filepath,
-			})
 		}
 
 		// Start the bubbletea program to display the options
@@ -80,13 +74,14 @@ var editCmd = &cobra.Command{
 		if model.Reply.Filename == "DIDN'T CHOOSE A FILE" && model.Reply.Filepath == "DIDN'T CHOOSE A FILE" {
 			return nil
 		}
+
 		// Print it out
 		err = editFile(model.Reply.Filename, model.Reply.Filepath)
 		if err != nil {
 			return err
 		}
 
-		fmt.Printf("Successfully edited the file!\n")
+		fmt.Println("Successfully edited the file!")
 		return nil
 	},
 }

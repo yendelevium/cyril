@@ -1,12 +1,7 @@
 package tui
 
 import (
-	"fmt"
-	"os"
-
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
-	"github.com/charmbracelet/x/term"
 )
 
 type ReadModel struct {
@@ -49,34 +44,11 @@ func (m ReadModel) View() tea.View {
 
 	// IF I've selected a file, display it and quit
 	if m.Selected == m.Files[m.Cursor] {
-		s += fmt.Sprintf("Alias: %s; Path: %s\n", m.Selected.Filename, m.Selected.Filepath)
-		fileContent, err := os.ReadFile(m.Selected.Filepath)
-		if err != nil {
-			s += fmt.Sprintf("Couldn't read file: %v; Error: %v", m.Selected.Filename, err)
-			return tea.NewView(s)
-		}
-
-		// Get the current terminal width and use that to help deal with border rendering issues in lipgloss
-		physicalWidth, _, err := term.GetSize(os.Stdout.Fd())
-		if err != nil {
-			physicalWidth = 80 // Fallback width just in case
-		}
-		style := lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(lipgloss.RGBColor{
-				R: 220,
-				G: 155,
-				B: 255,
-			}).
-			Width(physicalWidth - 1).
-			PaddingLeft(1).
-			PaddingRight(1)
-
-		s += lipgloss.Sprintln(style.Render(fmt.Sprintf("%s", string(fileContent))))
+		s += FileDisplay(m.Selected)
 		return tea.NewView(s)
 	}
 
-	s += fileIteration(m.Files, m.Cursor)
+	s += FileIteration(m.Files, m.Cursor)
 	s += "  Press q to quit"
 
 	return tea.NewView(s)

@@ -58,7 +58,7 @@ func (m EditModel) View() tea.View {
 		s += fmt.Sprintf("[EDITING] Alias: %s;FilePath: %s;\n", m.Selected.Filename, m.Selected.Filepath)
 		return tea.NewView(s)
 	}
-	s += fileIteration(m.Files, m.Cursor)
+	s += FileIteration(m.Files, m.Cursor)
 	s += "  Press q to quit"
 	return tea.NewView(s)
 }

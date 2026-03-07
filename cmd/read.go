@@ -13,18 +13,11 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/charmbracelet/x/term"
 	"github.com/spf13/cobra"
 	"github.com/yendelevium/cyril/config"
 	"github.com/yendelevium/cyril/internal/tui"
 	bolt "go.etcd.io/bbolt"
 )
-
-// TODO: Make this common between the tui and this?
-type fileData struct {
-	filename string
-	filepath string
-}
 
 // readCmd represents the read command
 var readCmd = &cobra.Command{
@@ -39,7 +32,7 @@ var readCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		filename := args[0]
-		aliasNames := []fileData{}
+		aliasNames := []tui.FileData{}
 
 		// Get all keys that have the same alias name but diff topics
 		err := MatchAliasPrefixes(filename, &aliasNames)
@@ -58,49 +51,18 @@ var readCmd = &cobra.Command{
 			return nil
 		}
 
-		// TODO: This lipgloss code is reused in the tui View() as well, so un-reuse it by making it a function?
 		if len(aliasNames) == 1 {
 			file := aliasNames[0]
-			fmt.Printf("Alias: %s; Path: %s\n", file.filename, file.filepath)
-			fileContent, err := os.ReadFile(file.filepath)
-			if err != nil {
-				fmt.Printf("Couldn't read file: %v; Error: %v\n", file.filename, err)
-				return nil
-			}
-
-			// Get the current terminal width and use that to help deal with border rendering issues in lipgloss
-			// TODO: This fix works, but then if I fullscreen the terminal, I get a block that is half rendered and I can't do anything coz it has alr been printed and the program has ended
-			// It isn't a HUGE problem but still it looks kindof ugly so yeah idk
-			physicalWidth, _, err := term.GetSize(os.Stdout.Fd())
-			if err != nil {
-				physicalWidth = 80 // Fallback width just in case
-			}
-			style := lipgloss.NewStyle().
-				BorderStyle(lipgloss.NormalBorder()).
-				// TODO: Factor the colour out as a constant as I'm using it in multiple places
-				BorderForeground(lipgloss.RGBColor{
-					R: 220,
-					G: 155,
-					B: 255,
-				}).
-				Width(physicalWidth - 1).
-				PaddingLeft(1).
-				PaddingRight(1)
-			lipgloss.Println(style.Render(fmt.Sprintf("%s", string(fileContent))))
+			s := tui.FileDisplay(file)
+			lipgloss.Println(s)
 			return nil
 		}
 
-		// Iterate through all aliasnames and print out their content -> make the user choose
-		model := tui.ReadModel{}
-		for _, file := range aliasNames {
-			// fmt.Printf("Idx: %d; Alias: %s; Path: %s", idx, file.filename, file.filepath)
-			model.Files = append(model.Files, tui.FileData{
-				Filename: file.filename,
-				Filepath: file.filepath,
-			})
+		// Start the bubbletea program to display the options
+		model := tui.ReadModel{
+			Files: aliasNames,
 		}
 
-		// Start the bubbletea program to display the options
 		p := tea.NewProgram(model)
 		if _, err := p.Run(); err != nil {
 			fmt.Printf("Couldn't run bubbletea: %v\n", err)
@@ -115,7 +77,7 @@ func init() {
 	RootCmd.AddCommand(readCmd)
 }
 
-func MatchAliasPrefixes(filename string, aliasNames *[]fileData) error {
+func MatchAliasPrefixes(filename string, aliasNames *[]tui.FileData) error {
 	// Making this a function as I want to use defer statement so I don't forget to close the DB
 	// Also using it in ReadOnly mode
 	// dbPath := fmt.Sprintf("%s/cyril.db", Conf.DBPath)
@@ -138,9 +100,9 @@ func MatchAliasPrefixes(filename string, aliasNames *[]fileData) error {
 		c := bucket.Cursor()
 		prefix := []byte(filename)
 		for k, v := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = c.Next() {
-			*aliasNames = append(*aliasNames, fileData{
-				filename: string(k),
-				filepath: string(v),
+			*aliasNames = append(*aliasNames, tui.FileData{
+				Filename: string(k),
+				Filepath: string(v),
 			})
 		}
 		return nil
