@@ -10,19 +10,17 @@ import (
 )
 
 type ReadModel struct {
-	Files    []FileData // items on the to-do list
-	Cursor   int        // which to-do list item our Cursor is pointing at
-	Selected FileData   // which to-do items are selected
+	Files    []FileData
+	Cursor   int
+	Selected FileData
 }
 
 func (m ReadModel) Init() tea.Cmd {
-	// Just return `nil`, which means "no I/O right now, please."
 	return nil
 }
 
 func (m ReadModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
@@ -43,14 +41,10 @@ func (m ReadModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 	}
-
-	// Return the updated model to the Bubble Tea runtime for processing.
-	// Note that we're not returning a command.
 	return m, nil
 }
 
 func (m ReadModel) View() tea.View {
-	// The header
 	var s string
 
 	// IF I've selected a file, display it and quit
@@ -82,30 +76,8 @@ func (m ReadModel) View() tea.View {
 		return tea.NewView(s)
 	}
 
-	// TODO: Instead of padding with spaces, actually use lipgloss.Padding()? (pain) (will do later)
-	maxLen := 0
-	for _, file := range m.Files {
-		fileMsg := fmt.Sprintf("  Alias: %s;FilePath: %s;\n", file.Filename, file.Filepath)
-		maxLen = max(maxLen, len(fileMsg))
-	}
-	// Iterate over our Files
-	for i, choice := range m.Files {
-		if m.Cursor == i {
-			// TODO: This has a problem where if I press 'q', the colour stays and it looks kindof ugly
-			style := lipgloss.NewStyle().Background(lipgloss.RGBColor{
-				R: 220,
-				G: 155,
-				B: 255,
-			}).Width(maxLen)
-			s += lipgloss.Sprintln(style.Render(fmt.Sprintf("  Alias: %s;FilePath: %s;", choice.Filename, choice.Filepath)))
-		} else {
-			s += fmt.Sprintf("  Alias: %s;FilePath: %s;\n", choice.Filename, choice.Filepath)
-		}
-	}
-
-	// The footer
+	s += fileIteration(m.Files, m.Cursor)
 	s += "  Press q to quit"
 
-	// Send the UI for rendering
 	return tea.NewView(s)
 }
