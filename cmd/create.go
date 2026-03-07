@@ -116,6 +116,7 @@ func AddAlias(filename string, topic string, filepath string) {
 	// Write alias name to the DB
 	// The key is int the form {filename}.{topic}
 	err = db.Update(func(tx *bolt.Tx) error {
+		// Add in general
 		bucket, err := tx.CreateBucketIfNotExists([]byte("cyril"))
 		if err != nil {
 			log.Fatalf("Failed to create bucket; %v", err)
@@ -126,6 +127,17 @@ func AddAlias(filename string, topic string, filepath string) {
 		if err != nil {
 			log.Fatalf("Failed to write to bucket; %v", err)
 		}
+
+		// Add for a specific topic
+		topicBucket, err := tx.CreateBucketIfNotExists([]byte(topic))
+		if err != nil {
+			log.Fatalf("Failed to create bucket; %v", err)
+		}
+		err = topicBucket.Put([]byte(bucketKey), []byte(filepath))
+		if err != nil {
+			log.Fatalf("Failed to write to bucket; %v", err)
+		}
+
 		return nil
 	})
 

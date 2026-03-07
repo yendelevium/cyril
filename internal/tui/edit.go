@@ -39,6 +39,8 @@ func (m EditModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "enter":
 			m.Selected = m.Files[m.Cursor]
+
+			// Reply will be used by the COBRA edit command to initiate the code-editor
 			m.Reply.Filename = m.Selected.Filename
 			m.Reply.Filepath = m.Selected.Filepath
 			return m, tea.Quit
