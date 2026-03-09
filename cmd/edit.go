@@ -20,14 +20,9 @@ import (
 // editCmd represents the edit command
 var editCmd = &cobra.Command{
 	Use:   "edit",
-	Short: "Edit the target note",
-	Long: `A longer description that spans multiple lines and likely contains examples
-	and usage of using your command. For example:
-
-	Cobra is a CLI library for Go that empowers applications.
-	This application is a tool to generate the needed files
-	to quickly create a Cobra application.`,
-	Args: cobra.ExactArgs(1),
+	Short: "edit the target note",
+	Long:  "Lets you edit the given note. You can access it via the filename or the aliasname. If there are multiple files with the same name across topics/multiple prefix-matches for that file, you can choose which one to edit via a selector.",
+	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		filename := args[0]
 		aliasNames := []tui.FileData{}

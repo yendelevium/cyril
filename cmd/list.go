@@ -19,12 +19,7 @@ import (
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "list all files (total and/or under a specific topic)",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Long:  "Lists available files system wide or under a specific topic.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		topic, err := cmd.Flags().GetString("topic")
 		if err != nil {

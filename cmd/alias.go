@@ -14,14 +14,9 @@ import (
 // aliasCmd represents the alias command
 var aliasCmd = &cobra.Command{
 	Use:   "alias",
-	Short: "Create an alias for a file",
-	Long: `A longer description that spans multiple lines and likely contains examples
-	and usage of using your command. For example:
-
-	Cobra is a CLI library for Go that empowers applications.
-	This application is a tool to generate the needed files
-	to quickly create a Cobra application.`,
-	Args: cobra.ExactArgs(2),
+	Short: "create an alias for an existing file",
+	Long:  "Adds a new alias name for the given file (or an existing aliasname) in the same topic where the file belongs.",
+	Args:  cobra.ExactArgs(2),
 
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Read the alias value from the KV

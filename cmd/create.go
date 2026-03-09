@@ -19,15 +19,11 @@ import (
 
 // createCmd represents the create command
 var createCmd = &cobra.Command{
-	Use:   "create",
-	Short: "create a new file/note under a topic",
-	Long: `A longer description that spans multiple lines and likely contains examples
-	and usage of using your command. For example:
-
-	Cobra is a CLI library for Go that empowers applications.
-	This application is a tool to generate the needed files
-	to quickly create a Cobra application.`,
-	Args: cobra.ExactArgs(1),
+	Use:          "create",
+	Short:        "create a new file under a topic",
+	Long:         "This creates a file under the specified topic (default if not passed) -> also lets you add content to it upon creation.",
+	SilenceUsage: true,
+	Args:         cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Get the topic, else fallback to config.config.defaultTopic
 		topic, err := cmd.Flags().GetString("topic")
@@ -99,7 +95,7 @@ func init() {
 	// Can't put config.config.defaultTopic as fallback value here
 	// This is because I'm assuming this line executes before initconfig.Config() and we only get empty str (neither the default config.config, nor the actual config.config)
 	// As config.config is initialized w/o any values..
-	createCmd.Flags().StringP("topic", "t", "", "Help message for toggle")
+	createCmd.Flags().StringP("topic", "t", "", "specify the topic you want to store the note under (uses default if not specified)")
 	RootCmd.AddCommand(createCmd)
 }
 
