@@ -5,6 +5,8 @@ import (
 	"os"
 	"strings"
 
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/term"
 )
@@ -74,4 +76,53 @@ func FileDisplay(file FileData) string {
 	s += lipgloss.Sprintln(style.Render(fmt.Sprintf("%s", strings.TrimSpace(string(fileContent)))))
 	return s
 
+}
+
+// Help message footer (currently generalized, might need custom ones later but idk...)
+
+// keyMap defines a set of keybindings. To work for help it must satisfy
+// key.Map. It could also very easily be a map[string]key.Binding.
+type keyMap struct {
+	Up     key.Binding
+	Down   key.Binding
+	Select key.Binding
+	Quit   key.Binding
+}
+
+// ShortHelp returns keybindings to be shown in the mini help view. It's part
+// of the key.Map interface.
+func (k keyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Up, k.Down, k.Select, k.Quit}
+}
+
+// FullHelp returns keybindings for the expanded help view. It's part of the
+// key.Map interface.
+func (k keyMap) FullHelp() [][]key.Binding {
+	// No need for this coz I'm not gonna use it... It makes it column wise and its UGLY
+	return [][]key.Binding{}
+}
+
+var keys = keyMap{
+	Up: key.NewBinding(
+		key.WithKeys("up"),
+		key.WithHelp("↑", "move up"),
+	),
+	Down: key.NewBinding(
+		key.WithKeys("down"),
+		key.WithHelp("↓", "move down"),
+	),
+	Select: key.NewBinding(
+		key.WithKeys("enter"),
+		key.WithHelp("↵", "select item"),
+	),
+	Quit: key.NewBinding(
+		key.WithKeys("q", "esc", "ctrl+c"),
+		key.WithHelp("q", "quit"),
+	),
+}
+
+func HelpMsg() string {
+	help := help.New()
+	helpView := help.ShortHelpView(keys.ShortHelp())
+	return lipgloss.Sprintln(helpView)
 }

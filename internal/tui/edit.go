@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 type EditModel struct {
@@ -50,17 +51,16 @@ func (m EditModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m EditModel) View() tea.View {
-	var s string
 	if m.NoOption == true {
-		s += "No file chosen to edit!\n"
-		return tea.NewView(s)
+		return tea.NewView("No file chosen to edit!\n")
 	}
 
 	if m.Selected == m.Files[m.Cursor] {
-		s += fmt.Sprintf("[EDITING] Alias: %s;FilePath: %s;\n", m.Selected.Filename, m.Selected.Filepath)
-		return tea.NewView(s)
+		return tea.NewView(fmt.Sprintf("[EDITING] Alias: %s; FilePath: %s;\n", m.Selected.Filename, m.Selected.Filepath))
 	}
-	s += FileIteration(m.Files, m.Cursor)
-	s += "  Press q to quit"
+
+	s := FileIteration(m.Files, m.Cursor)
+	// Just rendering the help msg according to the file list formatting (padding left 2)
+	s += lipgloss.Sprint(lipgloss.NewStyle().PaddingLeft(2).Render(HelpMsg()))
 	return tea.NewView(s)
 }

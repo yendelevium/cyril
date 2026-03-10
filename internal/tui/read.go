@@ -2,6 +2,7 @@ package tui
 
 import (
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 type ReadModel struct {
@@ -20,7 +21,7 @@ func (m ReadModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
-		case "ctrl+c", "q":
+		case "ctrl+c", "q", "esc":
 			m.NoOption = true
 			return m, tea.Quit
 
@@ -56,6 +57,8 @@ func (m ReadModel) View() tea.View {
 	}
 
 	s := FileIteration(m.Files, m.Cursor)
-	s += "  Press q to quit"
+
+	// Just rendering the help msg according to the file list formatting (padding left 2)
+	s += lipgloss.Sprint(lipgloss.NewStyle().PaddingLeft(2).Render(HelpMsg()))
 	return tea.NewView(s)
 }

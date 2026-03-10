@@ -207,5 +207,7 @@ func (m ListModel) View() tea.View {
 	if m.NoOption || m.Selected == m.Selector.Files[m.Cursor] {
 		return tea.NewView("")
 	}
-	return tea.NewView(lipgloss.JoinHorizontal(lipgloss.Left, m.Selector.View().Content, m.Displayer.View().Content))
+
+	helpMsg := lipgloss.Sprint(lipgloss.NewStyle().PaddingLeft(1).Render(HelpMsg()))
+	return tea.NewView(lipgloss.JoinHorizontal(lipgloss.Left, m.Selector.View().Content, m.Displayer.View().Content) + "\n" + helpMsg)
 }
