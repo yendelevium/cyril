@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"os/exec"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -52,4 +53,20 @@ func InitConfig() {
 	Conf.Store = os.ExpandEnv(Conf.Store)
 	Conf.Editor = os.ExpandEnv(Conf.Editor)
 	Conf.DBPath = os.ExpandEnv(Conf.DBPath)
+
+	// Potential fallback editors if not found in config or if $EDITOR isn't set
+	if Conf.Editor == "" {
+		editors := []string{"vim", "emacs", "nano"}
+		for _, name := range editors {
+			// If it exists, set it and retrun
+			path, err := exec.LookPath(name)
+			if err == nil {
+				Conf.Editor = path
+				return
+			}
+		}
+
+		// If no editors found, exit process
+		log.Fatalf("Failed to find a usable editor, please set $EDITOR or an editor in ~/.config/cyril/config.yml")
+	}
 }
