@@ -11,6 +11,7 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/spf13/cobra"
 	"github.com/yendelevium/cyril/config"
 	"github.com/yendelevium/cyril/internal/tui"
@@ -71,13 +72,23 @@ var listCmd = &cobra.Command{
 		}
 
 		// Start the bubbletea program to display the options
-		model := tui.ListModelInitialize(aliasNames, fileContents)
+		reply := tui.FileData{
+			Filename: "DIDN'T CHOOSE A FILE",
+			Filepath: "DIDN'T CHOOSE A FILE",
+		}
+		model := tui.ListModelInitialize(aliasNames, fileContents, &reply)
 
 		p := tea.NewProgram(model)
 		if _, err := p.Run(); err != nil {
 			fmt.Printf("Couldn't run bubbletea: %v\n", err)
 			os.Exit(1)
 		}
+		if reply.Filename == "DIDN'T CHOOSE A FILE" && reply.Filepath == "DIDN'T CHOOSE A FILE" {
+			return nil
+		}
+
+		s := tui.FileDisplay(reply)
+		lipgloss.Println(s)
 		return nil
 	},
 }

@@ -96,10 +96,12 @@ type ListModel struct {
 	Displayer  FileDisplayer
 	TotalFiles int
 	Cursor     int
+	Reply      *FileData
 	Selected   FileData
+	NoOption   bool
 }
 
-func ListModelInitialize(files []FileData, fileContents []string) ListModel {
+func ListModelInitialize(files []FileData, fileContents []string, reply *FileData) ListModel {
 
 	// Width control + display truncation
 	physicalWidth, physicalHeight, err := term.GetSize(os.Stdout.Fd())
@@ -160,6 +162,8 @@ func ListModelInitialize(files []FileData, fileContents []string) ListModel {
 		},
 		Cursor:     0,
 		TotalFiles: len(files),
+		Reply:      reply,
+		NoOption:   false,
 	}
 }
 
@@ -172,6 +176,7 @@ func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
+			m.NoOption = true
 			return m, tea.Quit
 		case "up":
 			if m.Cursor > 0 {
@@ -185,11 +190,22 @@ func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.Displayer.Cursor = m.Cursor
 			m.Selector.Cursor = m.Cursor
+		case "enter":
+			m.Selected = m.Selector.Files[m.Cursor]
+
+			// Reply will be used by the COBRA list command to render the view
+			m.Reply.Filename = m.Selected.Filename
+			m.Reply.Filepath = m.Selected.Filepath
+			return m, tea.Batch(tea.Quit, tea.ClearScreen)
 		}
 	}
 	return m, nil
 }
 
 func (m ListModel) View() tea.View {
+	// Clear the screen upon selection...?
+	if m.NoOption || m.Selected == m.Selector.Files[m.Cursor] {
+		return tea.NewView("")
+	}
 	return tea.NewView(lipgloss.JoinHorizontal(lipgloss.Left, m.Selector.View().Content, m.Displayer.View().Content))
 }
