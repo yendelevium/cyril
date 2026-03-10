@@ -54,8 +54,15 @@ var readCmd = &cobra.Command{
 		}
 
 		// Start the bubbletea program to display the options
+		// DISPLAYING LARGE STATIC FILES & THEN QUITTING HAS A HUGE PROBLEM IN BUBBLE TEA OF SHI GETTING CUT-OFF
+		// SO THIS WORKS (god there has to be a better way?)
 		model := tui.ReadModel{
 			Files: aliasNames,
+			Reply: &tui.FileData{
+				Filename: "DIDN'T CHOOSE A FILE",
+				Filepath: "DIDN'T CHOOSE A FILE",
+			},
+			NoOption: false,
 		}
 
 		p := tea.NewProgram(model)
@@ -64,6 +71,12 @@ var readCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		if model.Reply.Filename == "DIDN'T CHOOSE A FILE" && model.Reply.Filepath == "DIDN'T CHOOSE A FILE" {
+			return nil
+		}
+
+		s := tui.FileDisplay(*model.Reply)
+		lipgloss.Println(s)
 		return nil
 	},
 }

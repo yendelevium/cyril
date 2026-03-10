@@ -47,8 +47,7 @@ func FileIteration(files []FileData, cursor int) string {
 }
 
 func FileDisplay(file FileData) string {
-	var s string
-	s += fmt.Sprintf("Alias: %s; Path: %s\n", file.Filename, file.Filepath)
+	s := fmt.Sprintf("Alias: %s; Path: %s\n", file.Filename, file.Filepath)
 	fileContent, err := os.ReadFile(file.Filepath)
 	if err != nil {
 		s += fmt.Sprintf("Couldn't read file: %v; Error: %v", file.Filename, err)
@@ -60,10 +59,11 @@ func FileDisplay(file FileData) string {
 	if err != nil {
 		physicalWidth = 80 // Fallback width just in case
 	}
+
 	style := lipgloss.NewStyle().
 		BorderStyle(lipgloss.NormalBorder()).
 		BorderForeground(BORDERCOLOR).
-		Width(physicalWidth - 1).
+		Width(physicalWidth).
 		PaddingLeft(1).
 		PaddingRight(1)
 

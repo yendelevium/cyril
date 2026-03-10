@@ -114,6 +114,8 @@ func ListModelInitialize(files []FileData, fileContents []string) ListModel {
 	// Max height is m.MaxHeight - 2
 	// TODO: Also no because there has to be a better way to do this?? What in the DSA is this TvT
 	// Also doing this here because I don't wanna re calc everytime I switch between files (if I put this in FileDisplayer.View())
+
+	// TODO: Better maxwidth calculations coz it has some leftoverspace on the side and its annoying me a bit
 	lineWidth := (3*physicalWidth-2)/4 - 1
 	lineHeight := len(files)
 

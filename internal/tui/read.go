@@ -7,7 +7,9 @@ import (
 type ReadModel struct {
 	Files    []FileData
 	Cursor   int
+	Reply    *FileData
 	Selected FileData
+	NoOption bool
 }
 
 func (m ReadModel) Init() tea.Cmd {
@@ -19,6 +21,7 @@ func (m ReadModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
+			m.NoOption = true
 			return m, tea.Quit
 
 		case "up":
@@ -33,23 +36,26 @@ func (m ReadModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "enter":
 			m.Selected = m.Files[m.Cursor]
-			return m, tea.Quit
+
+			// Reply will be used by the COBRA read command to render the view
+			m.Reply.Filename = m.Selected.Filename
+			m.Reply.Filepath = m.Selected.Filepath
+			return m, tea.Batch(tea.Quit, tea.ClearScreen)
 		}
 	}
 	return m, nil
 }
 
 func (m ReadModel) View() tea.View {
-	var s string
-
-	// IF I've selected a file, display it and quit
-	if m.Selected == m.Files[m.Cursor] {
-		s += FileDisplay(m.Selected)
-		return tea.NewView(s)
+	if m.NoOption == true {
+		return tea.NewView("No file chosen to read!\n")
 	}
 
-	s += FileIteration(m.Files, m.Cursor)
-	s += "  Press q to quit"
+	if m.Selected == m.Files[m.Cursor] {
+		return tea.NewView("")
+	}
 
+	s := FileIteration(m.Files, m.Cursor)
+	s += "  Press q to quit"
 	return tea.NewView(s)
 }
