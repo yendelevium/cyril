@@ -1,14 +1,16 @@
 /*
-Copyright © 2026 NAME HERE <EMAIL ADDRESS>
+Copyright © 2026 yendelevium <yashbardia27@gmail.com>
 */
 package cmd
 
 import (
 	"fmt"
-	"log"
+	"os"
 	fp "path/filepath"
+	"strings"
 	"time"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/spf13/cobra"
 	"github.com/yendelevium/cyril/config"
 	"github.com/yendelevium/cyril/internal/tui"
@@ -56,25 +58,31 @@ var listCmd = &cobra.Command{
 			return fmt.Errorf("KV error: %v\n", err)
 		}
 
-		// Make this the TUI later
+		// TODO: Sort based on filename so all the aliases are together?!
+		// TODO: Make this async
+		fileContents := []string{}
 		for _, file := range aliasNames {
-			log.Printf("%v %v", file.Filename, file.Filepath)
+			fileContent, err := os.ReadFile(file.Filepath)
+			if err != nil {
+				fileContents = append(fileContents, fmt.Sprintf("Couldn't read file: %v; Error: %v", file.Filename, err))
+				continue
+			}
+			fileContents = append(fileContents, strings.TrimSpace(string(fileContent)))
 		}
 
+		// Start the bubbletea program to display the options
+		model := tui.ListModelInitialize(aliasNames, fileContents)
+
+		p := tea.NewProgram(model)
+		if _, err := p.Run(); err != nil {
+			fmt.Printf("Couldn't run bubbletea: %v\n", err)
+			os.Exit(1)
+		}
 		return nil
 	},
 }
 
 func init() {
 	RootCmd.AddCommand(listCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// listCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
 	listCmd.Flags().StringP("topic", "t", "cyril", "Help message for toggle")
 }

@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/term"
@@ -25,7 +26,7 @@ func FileIteration(files []FileData, cursor int) string {
 	var s string
 	maxLen := 0
 	for _, file := range files {
-		fileMsg := fmt.Sprintf("  Alias: %s;FilePath: %s;\n", file.Filename, file.Filepath)
+		fileMsg := fmt.Sprintf("  Alias: %s; FilePath: %s;\n", file.Filename, file.Filepath)
 		maxLen = max(maxLen, len(fileMsg))
 	}
 	// Iterate over our Files
@@ -66,7 +67,7 @@ func FileDisplay(file FileData) string {
 		PaddingLeft(1).
 		PaddingRight(1)
 
-	s += lipgloss.Sprintln(style.Render(fmt.Sprintf("%s", string(fileContent))))
+	s += lipgloss.Sprintln(style.Render(fmt.Sprintf("%s", strings.TrimSpace(string(fileContent)))))
 	return s
 
 }
