@@ -33,7 +33,7 @@ var editCmd = &cobra.Command{
 			return err
 		}
 
-		// TODO: The same ones as in read.go (walk file dir, choose if multiple, prompt to create)
+		// TODO: The same ones as in read.go (walk file dir, prompt to create)
 		if len(aliasNames) == 0 {
 			log.Printf("Couldn't find the note %s; do you want to create it? {make it a prompt}", filename)
 			return nil
@@ -123,7 +123,6 @@ func editFile(filename string, filepath string) error {
 	defer os.Remove(tmpFile)
 
 	// TODO:  Hand-off control to the default editor... (maybe abstract this into its own function? probably)
-	// The default editor might also not be there if $EDITOR isn't set, so add fallback to a universal editor (idk)
 	command := exec.Command(config.Conf.Editor, tmpFile)
 
 	// Need these coz otherwise the process starts elsewhere and NOT in the same terminal where cyril was invoked
@@ -135,6 +134,7 @@ func editFile(filename string, filepath string) error {
 	if err := command.Run(); err != nil {
 		return err
 	}
+
 	// Copy the tmp file back to the original file
 	return copyFile(tmpFile, filepath)
 }

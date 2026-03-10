@@ -21,26 +21,30 @@ var BORDERCOLOR lipgloss.RGBColor = lipgloss.RGBColor{
 	B: 255,
 }
 
-// TODO: Instead of padding with spaces, actually use lipgloss.Padding()? (pain) (will do later)
 func FileIteration(files []FileData, cursor int) string {
 	var s string
+
+	// Getting the length for the colour block
 	maxLen := 0
+	padding := lipgloss.NewStyle().PaddingLeft(2)
 	for _, file := range files {
-		fileMsg := fmt.Sprintf("  Alias: %s; FilePath: %s;\n", file.Filename, file.Filepath)
+		fileMsg := lipgloss.Sprintln(padding.Render(fmt.Sprintf("Alias: %s; FilePath: %s;", file.Filename, file.Filepath)))
 		maxLen = max(maxLen, len(fileMsg))
 	}
+
 	// Iterate over our Files
 	for i, choice := range files {
 		if cursor == i {
-			// TODO: This has a problem where if I press 'q', the colour stays and it looks kindof ugly
-			style := lipgloss.NewStyle().Background(lipgloss.RGBColor{
-				R: 220,
-				G: 155,
-				B: 255,
-			}).Width(maxLen)
-			s += lipgloss.Sprintln(style.Render(fmt.Sprintf("  Alias: %s;FilePath: %s;", choice.Filename, choice.Filepath)))
+			style := padding.
+				Background(lipgloss.RGBColor{
+					R: 220,
+					G: 155,
+					B: 255,
+				}).
+				Width(maxLen)
+			s += lipgloss.Sprintln(style.Render(fmt.Sprintf("Alias: %s; FilePath: %s;", choice.Filename, choice.Filepath)))
 		} else {
-			s += fmt.Sprintf("  Alias: %s;FilePath: %s;\n", choice.Filename, choice.Filepath)
+			s += lipgloss.Sprintln(padding.Render(fmt.Sprintf("Alias: %s; FilePath: %s;", choice.Filename, choice.Filepath)))
 		}
 	}
 	return s

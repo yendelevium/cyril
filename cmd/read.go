@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"sort"
 	"time"
 
 	fp "path/filepath"
@@ -35,9 +36,13 @@ var readCmd = &cobra.Command{
 			return err
 		}
 
+		// Sort based on filepath so all the aliases are together
+		sort.Slice(aliasNames, func(i, j int) bool {
+			return aliasNames[i].Filepath < aliasNames[j].Filepath
+		})
+
 		// TODO: Walk the store to see any matching files using os.Walkdir (I think)
 		// TODO: IF file doesn't exist offer to create it
-		// TODO: IF multiple files exist offer to choose which one to open
 		// If aliasName length is 0 or 1, handle normally
 		if len(aliasNames) == 0 {
 			// No alias names

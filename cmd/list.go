@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	fp "path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -59,7 +60,11 @@ var listCmd = &cobra.Command{
 			return fmt.Errorf("KV error: %v\n", err)
 		}
 
-		// TODO: Sort based on filename so all the aliases are together?!
+		// Sort based on filepath so all the aliases are together
+		sort.Slice(aliasNames, func(i, j int) bool {
+			return aliasNames[i].Filepath < aliasNames[j].Filepath
+		})
+
 		// TODO: Make this async
 		fileContents := []string{}
 		for _, file := range aliasNames {
