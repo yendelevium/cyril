@@ -77,7 +77,6 @@ func (m FileDisplayer) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // TODO: Make this view SCROLLABLE instead to not go down in the terminal using the physicalHeight thing
 func (m FileDisplayer) View() tea.View {
 	// WAIT Idk is this it??
-	width := (3*m.MaxWidth-2)/4 - 1
 	padding := lipgloss.NewStyle().PaddingLeft(1)
 	border := lipgloss.NewStyle().
 		// Just so you know
@@ -85,37 +84,11 @@ func (m FileDisplayer) View() tea.View {
 		PaddingLeft(1).
 		PaddingRight(1).
 		BorderForeground(BORDERCOLOR).
-		Width(width).Height(m.MaxHeight).MaxHeight(m.MaxHeight)
+		Width(m.MaxWidth).
+		Height(m.MaxHeight).
+		MaxHeight(m.MaxHeight)
 
-	// Truncating the content displayed based on terminal width and height!
-	// The main problem is with height. The \n's are confusing me here.
-	// The max length of a line, accounting for borders and all is the Width - 4
-	// Max height is m.MaxHeight - 2
-	lineWidth := width
-	lineHeight := m.MaxHeight - 2
-
-	charCount := 0
-	lineCount := 0
-	content := m.FileContents[m.Cursor]
-	for slice, char := range content {
-		if char == '\n' {
-			lineCount++
-			charCount = 0
-		} else {
-			charCount++
-		}
-
-		if charCount == lineWidth {
-			charCount = 0
-			lineCount++
-		}
-		if lineCount == lineHeight {
-			// Truncate
-			content = content[:slice-3] + "..."
-			break
-		}
-	}
-	return tea.NewView(padding.Render(border.Render(content)))
+	return tea.NewView(padding.Render(border.Render(m.FileContents[m.Cursor])))
 }
 
 type ListModel struct {
@@ -127,11 +100,49 @@ type ListModel struct {
 }
 
 func ListModelInitialize(files []FileData, fileContents []string) ListModel {
+
+	// Width control + display truncation
 	physicalWidth, physicalHeight, err := term.GetSize(os.Stdout.Fd())
 	if err != nil {
 		physicalWidth = 80  // Fallback width just in case
 		physicalHeight = 80 // Fallback height just in case
 	}
+
+	// Truncating the content displayed based on terminal width and height!
+	// The main problem is with height. The \n's are confusing me here.
+	// The max length of a line, accounting for borders and all is the Width - 4
+	// Max height is m.MaxHeight - 2
+	// TODO: Also no because there has to be a better way to do this?? What in the DSA is this TvT
+	// Also doing this here because I don't wanna re calc everytime I switch between files (if I put this in FileDisplayer.View())
+	lineWidth := (3*physicalWidth-2)/4 - 1
+	lineHeight := len(files)
+
+	// Girl I don't even know what I wrote but it works (ok its not that bad but still)
+	for idx, content := range fileContents {
+		charCount := 0
+		lineCount := 0
+		for slice, char := range content {
+			if char == '\n' {
+				lineCount++
+				charCount = 0
+			} else {
+				charCount++
+			}
+
+			if charCount == lineWidth {
+				charCount = 0
+				lineCount++
+			}
+			if lineCount == lineHeight {
+				// Truncate
+				content = content[:slice-3] + "..."
+				break
+			}
+		}
+		fileContents[idx] = content
+	}
+
+	// Make the model
 	return ListModel{
 		Selector: FileSelector{
 			Files:    files,
@@ -142,7 +153,7 @@ func ListModelInitialize(files []FileData, fileContents []string) ListModel {
 		Displayer: FileDisplayer{
 			FileContents: fileContents,
 			Cursor:       0,
-			MaxWidth:     physicalWidth,
+			MaxWidth:     lineWidth,
 			MaxHeight:    len(files) + 2, // +2 to take account for the padding in the Selector view
 		},
 		Cursor:     0,
