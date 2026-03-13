@@ -4,10 +4,14 @@ Copyright © 2026 yendelevium <yashbardia27@gmail.com>
 package cmd
 
 import (
+	"fmt"
 	"log"
+	"os"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/spf13/cobra"
 	"github.com/yendelevium/cyril/config"
+	"github.com/yendelevium/cyril/internal/tui"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -21,6 +25,10 @@ var RootCmd = &cobra.Command{
 	Args: cobra.ArbitraryArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		log.Printf("Runs this when the rootCMD is executed %v", args)
+		if _, err := tea.NewProgram(tui.InitialModel()).Run(); err != nil {
+			fmt.Printf("could not start program: %s\n", err)
+			os.Exit(1)
+		}
 		return nil
 	},
 }

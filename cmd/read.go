@@ -47,7 +47,13 @@ var readCmd = &cobra.Command{
 		if len(aliasNames) == 0 {
 			// No alias names
 			// Walk the directory? or NO?
-			fmt.Printf("Couldn't find the note %s!\n", filename)
+			// fmt.Printf("Couldn't find the note %s!\n", filename)
+			model := tui.CreateUtilInit(filename, "general")
+			p := tea.NewProgram(model)
+			if _, err := p.Run(); err != nil {
+				fmt.Printf("Couldn't run bubbletea: %v\n", err)
+				os.Exit(1)
+			}
 			return nil
 		}
 
