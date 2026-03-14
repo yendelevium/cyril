@@ -209,6 +209,6 @@ func (m ListModel) View() tea.View {
 		return tea.NewView("")
 	}
 
-	helpMsg := lipgloss.Sprint(lipgloss.NewStyle().PaddingLeft(1).Render(HelpMsg()))
+	helpMsg := lipgloss.Sprint(lipgloss.NewStyle().PaddingLeft(1).Render(HelpMsg(generalKeys)))
 	return tea.NewView(lipgloss.JoinHorizontal(lipgloss.Left, m.Selector.View().Content, m.Displayer.View().Content) + "\n" + helpMsg)
 }

@@ -6,6 +6,7 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"os"
 	"sort"
 	"time"
@@ -48,12 +49,30 @@ var readCmd = &cobra.Command{
 			// No alias names
 			// Walk the directory? or NO?
 			// fmt.Printf("Couldn't find the note %s!\n", filename)
-			model := tui.CreateUtilInit(filename, "general")
+
+			// TODO: When I add the -t flag, put the topic here...
+			model := tui.CreateUtil{
+				Cursor: 0,
+				Reply: &struct {
+					Filename string
+					Topic    string
+				}{
+					Filename: filename,
+					Topic:    config.Conf.DefaultTopic,
+				},
+				NoOption: false,
+				Chosen:   false,
+				Input:    tui.InitialInputModel(filename, config.Conf.DefaultTopic),
+			}
+
 			p := tea.NewProgram(model)
 			if _, err := p.Run(); err != nil {
 				fmt.Printf("Couldn't run bubbletea: %v\n", err)
 				os.Exit(1)
 			}
+
+			// CREATE LOGIC...
+			log.Println(model.Reply.Filename, model.Reply.Topic)
 			return nil
 		}
 

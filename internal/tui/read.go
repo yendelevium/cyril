@@ -59,6 +59,6 @@ func (m ReadModel) View() tea.View {
 	s := FileIteration(m.Files, m.Cursor)
 
 	// Just rendering the help msg according to the file list formatting (padding left 2)
-	s += lipgloss.Sprint(lipgloss.NewStyle().PaddingLeft(2).Render(HelpMsg()))
+	s += lipgloss.Sprint(lipgloss.NewStyle().PaddingLeft(2).Render(HelpMsg(generalKeys)))
 	return tea.NewView(s)
 }

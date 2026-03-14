@@ -3,26 +3,19 @@ package tui
 import (
 	"fmt"
 
-	"charm.land/bubbles/v2/help"
-	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 )
 
 type CreateUtil struct {
-	Cursor   int
-	Filename string
-	Topic    string
-	Input    InputModel
+	Cursor int
+	Reply  *struct {
+		Filename string
+		Topic    string
+	}
 	NoOption bool
 	Chosen   bool
-}
-
-func CreateUtilInit(filename string, topic string) CreateUtil {
-	return CreateUtil{
-		Cursor: 0,
-		Input:  InitialInputModel(filename, topic),
-	}
+	Input    InputModel
 }
 
 func (m CreateUtil) Init() tea.Cmd {
@@ -33,6 +26,13 @@ func (m CreateUtil) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.Chosen {
 		model, cmd := m.Input.Update(msg)
 		m.Input = model.(InputModel)
+
+		// If I'm quitting, relay the file info
+		if m.Input.Quitting {
+			m.Reply.Filename = m.Input.Inputs[0].Value()
+			m.Reply.Topic = m.Input.Inputs[1].Value()
+		}
+
 		return m, cmd
 	}
 
@@ -73,7 +73,7 @@ func (m CreateUtil) View() tea.View {
 	}
 
 	style := lipgloss.NewStyle().PaddingLeft(2)
-	s := lipgloss.Sprintln(style.Render(fmt.Sprintf("Couldn't find the file %s!", m.Filename)))
+	s := lipgloss.Sprintln(style.Render(fmt.Sprintf("Couldn't find the file %s!", m.Reply.Filename)))
 	prompt := lipgloss.Sprintln(style.Render("Would you like to create the file?"))
 
 	activeButtonStyle := lipgloss.NewStyle().Background(BORDERCOLOR).PaddingLeft(1).PaddingRight(1)
@@ -93,56 +93,11 @@ func (m CreateUtil) View() tea.View {
 
 	if m.Chosen {
 		s += m.Input.View().Content
-		s += lipgloss.Sprint(lipgloss.NewStyle().PaddingLeft(2).Render(inputHelpMsg()))
+		s += lipgloss.Sprint(lipgloss.NewStyle().PaddingLeft(2).Render(HelpMsg(inputKeys)))
 	} else {
 		// TODO: Need to update this help msg coz we now need to show left and right arrow instead of up and down (For Yes/No selection)
-		s += lipgloss.Sprint(lipgloss.NewStyle().PaddingLeft(2).Render(pickerHelpMsg()))
+		s += lipgloss.Sprint(lipgloss.NewStyle().PaddingLeft(2).Render(HelpMsg(pickerKeys)))
 	}
 
 	return tea.NewView(s)
-}
-
-type pickerKeyMap struct {
-	Left   key.Binding
-	Right  key.Binding
-	Select key.Binding
-	Quit   key.Binding
-}
-
-// ShortHelp returns keybindings to be shown in the mini help view. It's part
-// of the key.Map interface.
-func (k pickerKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Left, k.Right, k.Select, k.Quit}
-}
-
-// FullHelp returns keybindings for the expanded help view. It's part of the
-// key.Map interface.
-func (k pickerKeyMap) FullHelp() [][]key.Binding {
-	// No need for this coz I'm not gonna use it... It makes it column wise and its UGLY
-	return [][]key.Binding{}
-}
-
-var pickerKeys = pickerKeyMap{
-	Left: key.NewBinding(
-		key.WithKeys("up"),
-		key.WithHelp("←", "move left"),
-	),
-	Right: key.NewBinding(
-		key.WithKeys("down"),
-		key.WithHelp("→", "move right"),
-	),
-	Select: key.NewBinding(
-		key.WithKeys("enter"),
-		key.WithHelp("↵", "select"),
-	),
-	Quit: key.NewBinding(
-		key.WithKeys("q", "esc", "ctrl+c"),
-		key.WithHelp("q", "quit"),
-	),
-}
-
-func pickerHelpMsg() string {
-	help := help.New()
-	helpView := help.ShortHelpView(pickerKeys.ShortHelp())
-	return lipgloss.Sprintln(helpView)
 }

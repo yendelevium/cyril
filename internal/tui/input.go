@@ -5,8 +5,6 @@ import (
 	"strings"
 
 	"charm.land/bubbles/v2/cursor"
-	"charm.land/bubbles/v2/help"
-	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
@@ -81,7 +79,6 @@ func (m InputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "ctrl+c", "esc":
-			m.Quitting = true
 			return m, tea.Quit
 
 		// Set focus to next input
@@ -93,6 +90,7 @@ func (m InputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if s == "enter" && m.FocusIndex == len(m.Inputs) {
 				// Set the values for the filename and shi before quitting here
 				// TODO: INput validation for this?? Can't have empty file/topic names!!
+				m.Quitting = true
 				return m, tea.Quit
 			}
 
@@ -171,49 +169,4 @@ func (m InputModel) View() tea.View {
 	v := tea.NewView(b.String())
 	v.Cursor = c
 	return v
-}
-
-type inputKeyMap struct {
-	Up     key.Binding
-	Down   key.Binding
-	Select key.Binding
-	Quit   key.Binding
-}
-
-// ShortHelp returns keybindings to be shown in the mini help view. It's part
-// of the key.Map interface.
-func (k inputKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Up, k.Down, k.Select, k.Quit}
-}
-
-// FullHelp returns keybindings for the expanded help view. It's part of the
-// key.Map interface.
-func (k inputKeyMap) FullHelp() [][]key.Binding {
-	// No need for this coz I'm not gonna use it... It makes it column wise and its UGLY
-	return [][]key.Binding{}
-}
-
-var inputKeys = inputKeyMap{
-	Up: key.NewBinding(
-		key.WithKeys("up"),
-		key.WithHelp("↑", "move up"),
-	),
-	Down: key.NewBinding(
-		key.WithKeys("down"),
-		key.WithHelp("↓", "move down"),
-	),
-	Select: key.NewBinding(
-		key.WithKeys("enter"),
-		key.WithHelp("↵", "confirm"),
-	),
-	Quit: key.NewBinding(
-		key.WithKeys("esc", "ctrl+c"),
-		key.WithHelp("esc/ctrl+c", "quit"),
-	),
-}
-
-func inputHelpMsg() string {
-	help := help.New()
-	helpView := help.ShortHelpView(inputKeys.ShortHelp())
-	return lipgloss.Sprintln(helpView)
 }
