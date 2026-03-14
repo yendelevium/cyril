@@ -80,6 +80,7 @@ func (m FileDisplayer) View() tea.View {
 	padding := lipgloss.NewStyle().PaddingLeft(1)
 	border := lipgloss.NewStyle().
 		// Just so you know
+		// TODO: There's a height issue now... UHH
 		BorderStyle(lipgloss.NormalBorder()).
 		PaddingLeft(1).
 		PaddingRight(1).
