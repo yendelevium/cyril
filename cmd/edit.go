@@ -28,7 +28,7 @@ var editCmd = &cobra.Command{
 		aliasNames := []tui.FileData{}
 
 		// Get all keys that have the same alias name but diff topics
-		err := MatchAliasPrefixes(filename, &aliasNames)
+		err := MatchAliasPrefixes(filename, &aliasNames, "cyril")
 		if err != nil {
 			return err
 		}

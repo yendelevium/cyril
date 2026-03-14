@@ -26,6 +26,7 @@ var createCmd = &cobra.Command{
 	Args:         cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Get the topic, else fallback to config.config.defaultTopic
+		filename := args[0]
 		topic, err := cmd.Flags().GetString("topic")
 		if err != nil {
 			return err
@@ -34,59 +35,10 @@ var createCmd = &cobra.Command{
 			topic = config.Conf.DefaultTopic
 		}
 
-		// Make all intermediate directories
-		// dirpath := fmt.Sprintf("%s/%s", config.Conf.Store, topic)
-		dirpath := fp.Join(config.Conf.Store, topic)
-		// log.Println(dirpath)
-		err = os.MkdirAll(dirpath, 0777)
+		err = CreateFile(filename, topic)
 		if err != nil {
-			log.Fatalf("Couldn't create the required directories: %v", err)
-		}
-
-		// Create the file
-		filename := args[0]
-		filepath := fp.Join(dirpath, filename)
-
-		// Check if it exists? If it does, return (we don't wanna override it)
-		_, err = os.OpenFile(filepath, os.O_RDONLY, 0777)
-		if err == nil {
-			log.Printf("file:%s already exists in topic:%s; cannot create the file", filename, topic)
-			// Returning the error makes the command help thingy pop up (idk)
-			return nil
-		}
-		_, err = os.Create(filepath)
-		if err != nil {
-			log.Fatalf("Couldn't create file: %v", err)
-		}
-
-		// create the alias and store it in the DB
-		done := make(chan struct{})
-		go func() {
-			AddAlias(filename, topic, filepath)
-			// Signal the write is over
-			done <- struct{}{}
-		}()
-
-		log.Printf("Created file; Topic: %s, Name: %s", topic, filename)
-		// log.Println(config.config.editor)
-
-		// TODO:  Hand-off control to the default editor... (maybe abstract this into its own function? probably)
-		// The default editor might also not be there if $EDITOR isn't set, so add fallback to a universal editor (idk)
-		command := exec.Command(config.Conf.Editor, filepath)
-
-		// Need these coz otherwise the process starts elsewhere and NOT in the same terminal where cyril was invoked
-		command.Stdin = os.Stdin
-		command.Stdout = os.Stdout
-		command.Stderr = os.Stderr
-
-		// Run the command (editor) and wait for it to complete (Run() waits for compeletion automatically)
-		if err = command.Run(); err != nil {
 			return err
 		}
-		log.Println("Control returned")
-
-		// Block till the DB write is done
-		<-done
 		return nil
 	},
 }
@@ -97,6 +49,62 @@ func init() {
 	// As config.config is initialized w/o any values..
 	createCmd.Flags().StringP("topic", "t", "", "specify the topic you want to store the note under (uses default if not specified)")
 	RootCmd.AddCommand(createCmd)
+}
+
+func CreateFile(filename string, topic string) error {
+	// Make all intermediate directories
+	// dirpath := fmt.Sprintf("%s/%s", config.Conf.Store, topic)
+	dirpath := fp.Join(config.Conf.Store, topic)
+	// log.Println(dirpath)
+	err := os.MkdirAll(dirpath, 0777)
+	if err != nil {
+		log.Fatalf("Couldn't create the required directories: %v", err)
+	}
+
+	// Create the file
+	filepath := fp.Join(dirpath, filename)
+
+	// Check if it exists? If it does, return (we don't wanna override it)
+	_, err = os.OpenFile(filepath, os.O_RDONLY, 0777)
+	if err == nil {
+		log.Printf("file:%s already exists in topic:%s; cannot create the file", filename, topic)
+		// Returning the error makes the command help thingy pop up (idk)
+		return nil
+	}
+	_, err = os.Create(filepath)
+	if err != nil {
+		log.Fatalf("Couldn't create file: %v", err)
+	}
+
+	// create the alias and store it in the DB
+	done := make(chan struct{})
+	go func() {
+		AddAlias(filename, topic, filepath)
+		// Signal the write is over
+		done <- struct{}{}
+	}()
+
+	log.Printf("Created file; Topic: %s, Name: %s", topic, filename)
+	// log.Println(config.config.editor)
+
+	// TODO:  Hand-off control to the default editor... (maybe abstract this into its own function? probably)
+	// The default editor might also not be there if $EDITOR isn't set, so add fallback to a universal editor (idk)
+	command := exec.Command(config.Conf.Editor, filepath)
+
+	// Need these coz otherwise the process starts elsewhere and NOT in the same terminal where cyril was invoked
+	command.Stdin = os.Stdin
+	command.Stdout = os.Stdout
+	command.Stderr = os.Stderr
+
+	// Run the command (editor) and wait for it to complete (Run() waits for compeletion automatically)
+	if err = command.Run(); err != nil {
+		return err
+	}
+	log.Println("Control returned")
+
+	// Block till the DB write is done
+	<-done
+	return nil
 }
 
 // TODO: Make this RETURN an error

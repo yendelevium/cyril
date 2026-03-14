@@ -6,7 +6,6 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"os"
 	"sort"
 	"time"
@@ -31,10 +30,24 @@ var readCmd = &cobra.Command{
 		filename := args[0]
 		aliasNames := []tui.FileData{}
 
-		// Get all keys that have the same alias name but diff topics
-		err := MatchAliasPrefixes(filename, &aliasNames)
+		topic, err := cmd.Flags().GetString("topic")
 		if err != nil {
 			return err
+		}
+		if !cmd.Flags().Changed("topic") {
+			// Get all keys that have the same alias name but diff topics
+			// Default catch-all bucket name is "cyril"
+			topic = config.Conf.DefaultTopic
+			err = MatchAliasPrefixes(filename, &aliasNames, "cyril")
+			if err != nil {
+				return err
+			}
+		} else {
+			// Specific topic mein search
+			err = MatchAliasPrefixes(filename, &aliasNames, topic)
+			if err != nil {
+				return err
+			}
 		}
 
 		// Sort based on filepath so all the aliases are together
@@ -43,14 +56,12 @@ var readCmd = &cobra.Command{
 		})
 
 		// TODO: Walk the store to see any matching files using os.Walkdir (I think)
-		// TODO: IF file doesn't exist offer to create it
 		// If aliasName length is 0 or 1, handle normally
 		if len(aliasNames) == 0 {
 			// No alias names
 			// Walk the directory? or NO?
 			// fmt.Printf("Couldn't find the note %s!\n", filename)
 
-			// TODO: When I add the -t flag, put the topic here...
 			model := tui.CreateUtil{
 				Cursor: 0,
 				Reply: &struct {
@@ -58,11 +69,11 @@ var readCmd = &cobra.Command{
 					Topic    string
 				}{
 					Filename: filename,
-					Topic:    config.Conf.DefaultTopic,
+					Topic:    topic,
 				},
 				NoOption: false,
 				Chosen:   false,
-				Input:    tui.InitialInputModel(filename, config.Conf.DefaultTopic),
+				Input:    tui.InitialInputModel(filename, topic),
 			}
 
 			p := tea.NewProgram(model)
@@ -72,7 +83,10 @@ var readCmd = &cobra.Command{
 			}
 
 			// CREATE LOGIC...
-			log.Println(model.Reply.Filename, model.Reply.Topic)
+			err := CreateFile(model.Reply.Filename, model.Reply.Topic)
+			if err != nil {
+				return err
+			}
 			return nil
 		}
 
@@ -112,10 +126,11 @@ var readCmd = &cobra.Command{
 }
 
 func init() {
+	readCmd.Flags().StringP("topic", "t", "", "specify the topic you want to store the note under (uses default if not specified)")
 	RootCmd.AddCommand(readCmd)
 }
 
-func MatchAliasPrefixes(filename string, aliasNames *[]tui.FileData) error {
+func MatchAliasPrefixes(filename string, aliasNames *[]tui.FileData, topic string) error {
 	// Making this a function as I want to use defer statement so I don't forget to close the DB
 	// Also using it in ReadOnly mode
 	// dbPath := fmt.Sprintf("%s/cyril.db", Conf.DBPath)
@@ -129,7 +144,7 @@ func MatchAliasPrefixes(filename string, aliasNames *[]tui.FileData) error {
 	// Get all keys with the filename as an alias
 	// Stolen from official docs
 	err = db.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte("cyril"))
+		bucket := tx.Bucket([]byte(topic))
 		if bucket == nil {
 			return fmt.Errorf("NO notes recorded yet...\n")
 		}

@@ -31,7 +31,7 @@ var aliasCmd = &cobra.Command{
 
 		// Get the other alias(es)
 		aliasNames := []tui.FileData{}
-		MatchAliasPrefixes(targetAlias, &aliasNames)
+		MatchAliasPrefixes(targetAlias, &aliasNames, "cyril")
 		if len(aliasNames) == 0 {
 			// No alias names
 			// Walk the directory? or NO?
